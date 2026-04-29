@@ -1,0 +1,120 @@
+# ============================================================
+# SPRING BOOT / MAVEN (backend)
+# ============================================================
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.class
+backend/*.jar
+backend/*.war
+backend/*.ear
+backend/hs_err_pid*
+backend/.settings/
+backend/.classpath
+backend/.project
+backend/.factorypath
+
+# ============================================================
+# ANGULAR / NODE (frontend)
+# ============================================================
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.sass-cache/
+frontend/connect.lock
+frontend/coverage/
+frontend/libpeerconnection.log
+frontend/npm-debug.log*
+frontend/yarn-error.log
+frontend/testem.log
+frontend/typings/
+frontend/.DS_Store
+frontend/Thumbs.db
+
+# ============================================================
+# PYTHON / FASTAPI (nlp-service)
+# ============================================================
+nlp-service/__pycache__/
+nlp-service/**/__pycache__/
+nlp-service/*.py[cod]
+nlp-service/*.pyo
+nlp-service/*.pyd
+nlp-service/.Python
+nlp-service/venv/
+nlp-service/.venv/
+nlp-service/env/
+nlp-service/.env/
+nlp-service/pip-log.txt
+nlp-service/pip-delete-this-directory.txt
+nlp-service/.pytest_cache/
+nlp-service/.mypy_cache/
+nlp-service/.ruff_cache/
+nlp-service/htmlcov/
+nlp-service/.coverage
+nlp-service/coverage.xml
+nlp-service/*.egg-info/
+nlp-service/dist/
+nlp-service/build/
+# Modelli HuggingFace scaricati localmente
+nlp-service/models/
+nlp-service/.cache/
+
+# ============================================================
+# CREDENZIALI E CONFIGURAZIONI SENSIBILI
+# ============================================================
+.env
+.env.*
+!.env.example
+backend/src/main/resources/application-prod.yml
+backend/src/main/resources/application-prod.properties
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.properties
+**/secrets/
+**/*.pem
+**/*.key
+**/*.p12
+**/*.jks
+
+# ============================================================
+# ALLEGATI UTENTI
+# ============================================================
+/uploads/
+
+# ============================================================
+# CLAUDE CODE
+# ============================================================
+.claude/
+
+# ============================================================
+# IDE — IntelliJ IDEA
+# ============================================================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE — VS Code
+.vscode/
+*.code-workspace
+
+# IDE — Eclipse
+.project
+.classpath
+.settings/
+
+# ============================================================
+# OS
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# ============================================================
+# LOG E RUNTIME
+# ============================================================
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock

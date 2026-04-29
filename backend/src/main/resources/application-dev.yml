@@ -1,0 +1,51 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/campusreport_db
+    username: campusreport
+    password: campusreport
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: localhost
+    port: 1025
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: dev-secret-key-campusreport-2024-this-must-be-at-least-256-bits-long-for-hs256
+    expiration: 86400000
+  email:
+    domain-validation: false
+    from: noreply@campusreport.local
+  cors:
+    allowed-origins: http://localhost:4200
+  nlp:
+    url: http://localhost:8000
+  uploads:
+    path: ./uploads
+    max-file-size: 5242880
+    max-files-per-ticket: 3
+  assignment:
+    alpha: 0.6
+    beta: 0.4
+
+logging:
+  level:
+    it.unical.campusreport: DEBUG
+    org.springframework.security: DEBUG
