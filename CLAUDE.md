@@ -20,7 +20,7 @@
 - ADMIN (account unico pre-configurato)
 
 ## Modello dati principale
-- User (id, nome, cognome, email, password_hash, ruolo, attivo,created_at)
+- User (id, nome, cognome, email, password_hash, ruolo, attivo)
 - Tecnico estende User (specializzazioni, zona, carico_massimo=10)
 - Ticket (id, titolo, descrizione, categoria, stato, priorita, zona_id, segnalante_id, tecnico_id, categoria_confidenza, version, created_at, updated_at)
 - CambioStato (id, ticket_id, stato_precedente, stato_nuovo, utente_id, nota, timestamp)
