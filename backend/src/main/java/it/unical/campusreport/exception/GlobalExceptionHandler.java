@@ -3,6 +3,7 @@ package it.unical.campusreport.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -58,6 +59,49 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Credenziali non valide", ex.getMessage());
+    }
+
+    /**
+     * Gestisce la ricerca di un ticket inesistente.
+     */
+    @ExceptionHandler(TicketNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleTicketNotFound(TicketNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Ticket non trovato", ex.getMessage());
+    }
+
+    /**
+     * Gestisce il tentativo di accesso non autorizzato a un ticket altrui.
+     */
+    @ExceptionHandler(UnauthorizedTicketAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorizedTicketAccess(UnauthorizedTicketAccessException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Accesso non autorizzato al ticket", ex.getMessage());
+    }
+
+    /**
+     * Gestisce una transizione di stato non consentita dal workflow.
+     */
+    @ExceptionHandler(InvalidStatoTransitionException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidStatoTransition(InvalidStatoTransitionException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Transizione di stato non valida", ex.getMessage());
+    }
+
+    /**
+     * Gestisce la ricerca di una zona inesistente.
+     */
+    @ExceptionHandler(ZonaNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleZonaNotFound(ZonaNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Zona non trovata", ex.getMessage());
+    }
+
+    /**
+     * Gestisce conflitti di aggiornamento concorrente (optimistic locking).
+     * Restituisce 409 Conflict per indicare che il ticket è stato modificato da un altro processo.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        log.warn("Conflitto di aggiornamento concorrente: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.CONFLICT, "Conflitto di aggiornamento",
+                "Il ticket è stato modificato da un altro processo. Ricaricare e riprovare.");
     }
 
     /**

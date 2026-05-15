@@ -26,7 +26,7 @@ public class CambioStato {
     private Ticket ticket;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "stato_precedente", nullable = false)
+    @Column(name = "stato_precedente")
     private Stato statoPrecedente;
 
     @Enumerated(EnumType.STRING)

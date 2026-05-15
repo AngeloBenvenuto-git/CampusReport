@@ -60,6 +60,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Endpoint pubblici
                 .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register", "/auth/activate").permitAll()
+                // Utente corrente: qualsiasi ruolo autenticato
+                .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 // Mappa: qualsiasi ruolo autenticato
                 .requestMatchers(HttpMethod.GET, "/api/map/zone").authenticated()
                 // Ticket TECNICO o ADMIN — più specifici prima dei wildcard
@@ -69,7 +71,8 @@ public class SecurityConfig {
                 // Ticket STUDENTE, DOCENTE o ADMIN
                 .requestMatchers(HttpMethod.POST, "/api/tickets").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/tickets/miei").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/tickets/*").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")
+                // GET singolo ticket: tutti i ruoli (la logica di accesso è nel service)
+                .requestMatchers(HttpMethod.GET, "/api/tickets/*").authenticated()
                 // Admin: tutti i metodi su /api/admin/**
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // Tutto il resto richiede autenticazione
