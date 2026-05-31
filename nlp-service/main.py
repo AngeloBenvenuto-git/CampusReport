@@ -1,34 +1,29 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from transformers import pipeline
-from dotenv import load_dotenv
-import logging
-import os
+# Entry point del microservizio NLP di CampusReport
 
-load_dotenv()
+import logging
+from contextlib import asynccontextmanager
+
+import uvicorn
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from classifier import NLPClassifier
+from config import MODEL_NAME, PORT
+from models import ClassifyRequest, ClassifyResponse, HealthResponse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-MODEL_NAME = os.getenv("MODEL_NAME", "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
-CATEGORIES = ["ELETTRICO", "WIFI", "IDRAULICO", "ATTREZZATURA", "ALTRO"]
-
-classifier = None
+# Istanza globale del classificatore; il modello viene caricato nel lifespan
+nlp_classifier = NLPClassifier()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global classifier
-    logger.info(f"Caricamento modello: {MODEL_NAME}")
-    classifier = pipeline(
-        "zero-shot-classification",
-        model=MODEL_NAME,
-        device=-1,  # CPU; impostare 0 per GPU
-    )
-    logger.info("Modello caricato con successo")
+    """Carica il modello all'avvio e lo scarica allo spegnimento."""
+    nlp_classifier.load()
     yield
-    classifier = None
+    logger.info("Servizio NLP in chiusura")
 
 
 app = FastAPI(
@@ -37,49 +32,36 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-class ClassifyRequest(BaseModel):
-    testo: str
-
-
-class Alternative(BaseModel):
-    categoria: str
-    confidenza: float
-
-
-class ClassifyResponse(BaseModel):
-    categoria: str
-    confidenza: float
-    alternative: list[Alternative]
+# CORS: accetta richieste dal frontend Angular e dal backend Spring
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200", "http://localhost:8080"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/classify", response_model=ClassifyResponse)
 async def classify(request: ClassifyRequest) -> ClassifyResponse:
-    if classifier is None:
+    """Classifica il testo di una segnalazione e restituisce la categoria più probabile."""
+    if not nlp_classifier.is_loaded():
         raise HTTPException(status_code=503, detail="Modello non ancora caricato")
-    if not request.testo.strip():
-        raise HTTPException(status_code=400, detail="Il testo non può essere vuoto")
+    try:
+        return nlp_classifier.classify(request.testo)
+    except Exception as e:
+        logger.error("Errore durante la classificazione: %s", e)
+        raise HTTPException(status_code=500, detail="Errore interno durante la classificazione")
 
-    result = classifier(request.testo, CATEGORIES)
-    labels: list[str] = result["labels"]
-    scores: list[float] = result["scores"]
 
-    alternative = [
-        Alternative(categoria=label, confidenza=round(score, 4))
-        for label, score in zip(labels[1:], scores[1:])
-    ]
-
-    return ClassifyResponse(
-        categoria=labels[0],
-        confidenza=round(scores[0], 4),
-        alternative=alternative,
+@app.get("/health", response_model=HealthResponse)
+async def health() -> HealthResponse:
+    """Verifica lo stato del servizio e se il modello è disponibile."""
+    return HealthResponse(
+        status="ok",
+        model_loaded=nlp_classifier.is_loaded(),
+        model_name=MODEL_NAME,
     )
 
 
-@app.get("/health")
-async def health() -> dict:
-    return {
-        "status": "ok",
-        "model_loaded": classifier is not None,
-        "model_name": MODEL_NAME,
-    }
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=False)

@@ -5,6 +5,7 @@ import it.unical.campusreport.entity.CambioStato;
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
 import it.unical.campusreport.entity.Zona;
+import it.unical.campusreport.entity.enums.Categoria;
 import it.unical.campusreport.entity.enums.Priorita;
 import it.unical.campusreport.entity.enums.Ruolo;
 import it.unical.campusreport.entity.enums.Stato;
@@ -32,13 +33,16 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final ZonaRepository zonaRepository;
     private final CambioStatoRepository cambioStatoRepository;
+    private final NlpClient nlpClient;
 
     public TicketServiceImpl(TicketRepository ticketRepository,
                              ZonaRepository zonaRepository,
-                             CambioStatoRepository cambioStatoRepository) {
+                             CambioStatoRepository cambioStatoRepository,
+                             NlpClient nlpClient) {
         this.ticketRepository = ticketRepository;
         this.zonaRepository = zonaRepository;
         this.cambioStatoRepository = cambioStatoRepository;
+        this.nlpClient = nlpClient;
     }
 
     /**
@@ -67,6 +71,18 @@ public class TicketServiceImpl implements TicketService {
 
         ticket = ticketRepository.save(ticket);
 
+        // Classificazione NLP: sovrascrive la categoria solo se l'utente ha scelto ALTRO (o null)
+        NlpResponse nlpResponse = nlpClient.classifyText(request.getDescrizione());
+        if (request.getCategoria() == null || request.getCategoria() == Categoria.ALTRO) {
+            try {
+                ticket.setCategoria(Categoria.valueOf(nlpResponse.getCategoria()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Categoria NLP non riconosciuta: {}", nlpResponse.getCategoria());
+            }
+        }
+        ticket.setCategoriaConfidenza(nlpResponse.getConfidenza());
+        ticket = ticketRepository.save(ticket);
+
         CambioStato cambioStato = CambioStato.builder()
                 .ticket(ticket)
                 .statoPrecedente(null)
@@ -76,7 +92,8 @@ public class TicketServiceImpl implements TicketService {
 
         cambioStatoRepository.save(cambioStato);
 
-        log.info("Ticket {} creato con stato APERTA, priorità {}", ticket.getId(), priorita);
+        log.info("Ticket {} creato con stato APERTA, priorità {}, categoria {}, confidenza NLP {}",
+                ticket.getId(), priorita, ticket.getCategoria(), ticket.getCategoriaConfidenza());
         return toTicketResponse(ticket, List.of(cambioStato));
     }
 
