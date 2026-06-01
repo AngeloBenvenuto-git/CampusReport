@@ -33,8 +33,9 @@ public class CambioStato {
     @Column(name = "stato_nuovo", nullable = false)
     private Stato statoNuovo;
 
+    // Nullable: le transizioni di sistema (es. APERTA→IN_ATTESA senza tecnico) non hanno un utente
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "utente_id", nullable = false)
+    @JoinColumn(name = "utente_id")
     @ToString.Exclude
     private User utente;
 

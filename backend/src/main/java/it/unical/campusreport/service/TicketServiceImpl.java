@@ -34,15 +34,18 @@ public class TicketServiceImpl implements TicketService {
     private final ZonaRepository zonaRepository;
     private final CambioStatoRepository cambioStatoRepository;
     private final NlpClient nlpClient;
+    private final AssegnazioneService assegnazioneService;
 
     public TicketServiceImpl(TicketRepository ticketRepository,
                              ZonaRepository zonaRepository,
                              CambioStatoRepository cambioStatoRepository,
-                             NlpClient nlpClient) {
+                             NlpClient nlpClient,
+                             AssegnazioneService assegnazioneService) {
         this.ticketRepository = ticketRepository;
         this.zonaRepository = zonaRepository;
         this.cambioStatoRepository = cambioStatoRepository;
         this.nlpClient = nlpClient;
+        this.assegnazioneService = assegnazioneService;
     }
 
     /**
@@ -71,7 +74,7 @@ public class TicketServiceImpl implements TicketService {
 
         ticket = ticketRepository.save(ticket);
 
-        // Classificazione NLP: sovrascrive la categoria solo se l'utente ha scelto ALTRO (o null)
+        // 1. Classificazione NLP: sovrascrive la categoria solo se l'utente ha scelto ALTRO (o null)
         NlpResponse nlpResponse = nlpClient.classifyText(request.getDescrizione());
         if (request.getCategoria() == null || request.getCategoria() == Categoria.ALTRO) {
             try {
@@ -83,18 +86,24 @@ public class TicketServiceImpl implements TicketService {
         ticket.setCategoriaConfidenza(nlpResponse.getConfidenza());
         ticket = ticketRepository.save(ticket);
 
-        CambioStato cambioStato = CambioStato.builder()
+        // 2. CambioStato iniziale: null → APERTA
+        cambioStatoRepository.save(CambioStato.builder()
                 .ticket(ticket)
                 .statoPrecedente(null)
                 .statoNuovo(Stato.APERTA)
                 .utente(utente)
-                .build();
+                .build());
 
-        cambioStatoRepository.save(cambioStato);
+        // 3. Assegnazione automatica (crea il proprio CambioStato APERTA→ASSEGNATA/IN_ATTESA)
+        assegnazioneService.assegna(ticket);
+        ticket = ticketRepository.save(ticket);
 
-        log.info("Ticket {} creato con stato APERTA, priorità {}, categoria {}, confidenza NLP {}",
-                ticket.getId(), priorita, ticket.getCategoria(), ticket.getCategoriaConfidenza());
-        return toTicketResponse(ticket, List.of(cambioStato));
+        log.info("Ticket {} creato con stato {}, priorità {}, categoria {}, confidenza NLP {}",
+                ticket.getId(), ticket.getStato(), priorita,
+                ticket.getCategoria(), ticket.getCategoriaConfidenza());
+
+        List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
+        return toTicketResponse(ticket, storico);
     }
 
     /**
@@ -209,17 +218,19 @@ public class TicketServiceImpl implements TicketService {
         ticket.setTecnico(null);
         ticket = ticketRepository.save(ticket);
 
-        CambioStato cambioStato = CambioStato.builder()
+        cambioStatoRepository.save(CambioStato.builder()
                 .ticket(ticket)
                 .statoPrecedente(statoPrecedente)
                 .statoNuovo(Stato.RIFIUTATA)
                 .utente(tecnico)
                 .nota(request.getMotivazione())
-                .build();
+                .build());
 
-        cambioStatoRepository.save(cambioStato);
+        // Riassegnazione automatica escludendo il tecnico che ha rifiutato
+        assegnazioneService.riassegna(ticket, tecnico.getId());
+        ticket = ticketRepository.save(ticket);
 
-        log.info("Ticket {} rifiutato, tecnico rimosso", id);
+        log.info("Ticket {} rifiutato da {}, nuovo stato: {}", id, tecnico.getEmail(), ticket.getStato());
         List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
         return toTicketResponse(ticket, storico);
     }
