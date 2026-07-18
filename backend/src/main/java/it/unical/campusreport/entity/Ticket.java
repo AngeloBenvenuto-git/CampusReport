@@ -42,7 +42,7 @@ public class Ticket {
     private Priorita priorita;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zona_id")
+    @JoinColumn(name = "zona_id", nullable = false)
     @ToString.Exclude
     private Zona zona;
 
@@ -53,11 +53,12 @@ public class Ticket {
 
     // Nullable: non ancora assegnato o in attesa
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tecnico_id")
+    @JoinColumn(name = "tecnico_id", nullable = true)
     @ToString.Exclude
     private User tecnico;
 
-    @Column(name = "categoria_confidenza")
+    // Nullable: valorizzato dopo la chiamata al microservizio NLP, null al momento dell'insert iniziale
+    @Column(name = "categoria_confidenza", nullable = true)
     private Float categoriaConfidenza;
 
     @Version

@@ -25,8 +25,9 @@ public class CambioStato {
     @ToString.Exclude
     private Ticket ticket;
 
+    // Nullable: la prima transizione di un ticket (null → APERTA) non ha uno stato precedente
     @Enumerated(EnumType.STRING)
-    @Column(name = "stato_precedente")
+    @Column(name = "stato_precedente", nullable = true)
     private Stato statoPrecedente;
 
     @Enumerated(EnumType.STRING)
@@ -35,10 +36,11 @@ public class CambioStato {
 
     // Nullable: le transizioni di sistema (es. APERTA→IN_ATTESA senza tecnico) non hanno un utente
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "utente_id")
+    @JoinColumn(name = "utente_id", nullable = true)
     @ToString.Exclude
     private User utente;
 
+    @Column(name = "nota", nullable = true)
     private String nota;
 
     @CreationTimestamp
