@@ -33,6 +33,7 @@ app:
   email:
     domain-validation: false
     from: noreply@campusreport.local
+    admin-email: admin@campusreport.local
   cors:
     allowed-origins: http://localhost:4200
   nlp:

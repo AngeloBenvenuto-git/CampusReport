@@ -32,6 +32,7 @@ class AssegnazioneServiceTest {
     @Mock private TecnicoRepository tecnicoRepository;
     @Mock private TicketRepository ticketRepository;
     @Mock private CambioStatoRepository cambioStatoRepository;
+    @Mock private EmailService emailService;
 
     private AssegnazioneServiceImpl service;
 
@@ -41,7 +42,7 @@ class AssegnazioneServiceTest {
         config.setAlpha(0.6);
         config.setBeta(0.4);
         service = new AssegnazioneServiceImpl(
-                tecnicoRepository, ticketRepository, cambioStatoRepository, config);
+                tecnicoRepository, ticketRepository, cambioStatoRepository, config, emailService);
     }
 
     // ─── Fixture helpers ────────────────────────────────────────────────────────
@@ -88,6 +89,8 @@ class AssegnazioneServiceTest {
         assertThat(ticket.getStato()).isEqualTo(Stato.ASSEGNATA);
         assertThat(ticket.getTecnico()).isEqualTo(tecnico);
         verify(cambioStatoRepository).save(any());
+        verify(emailService).notificaTecnicoNuovaAssegnazione(ticket, tecnico);
+        verify(emailService).notificaUtenteStatoCambiato(ticket, Stato.ASSEGNATA);
     }
 
     // ─── Test 2: Carico pieno ────────────────────────────────────────────────────
@@ -108,6 +111,7 @@ class AssegnazioneServiceTest {
         assertThat(ticket.getStato()).isEqualTo(Stato.IN_ATTESA);
         assertThat(ticket.getTecnico()).isNull();
         verify(cambioStatoRepository).save(any());
+        verify(emailService).notificaAdminTicketInAttesa(ticket);
     }
 
     // ─── Test 3: Nessun tecnico disponibile ─────────────────────────────────────
@@ -124,6 +128,7 @@ class AssegnazioneServiceTest {
         assertThat(ticket.getStato()).isEqualTo(Stato.IN_ATTESA);
         assertThat(ticket.getTecnico()).isNull();
         verify(cambioStatoRepository).save(any());
+        verify(emailService).notificaAdminTicketInAttesa(ticket);
     }
 
     // ─── Test 4: Riassegnazione con tecnico escluso ──────────────────────────────
@@ -144,6 +149,8 @@ class AssegnazioneServiceTest {
 
         assertThat(ticket.getStato()).isEqualTo(Stato.ASSEGNATA);
         assertThat(ticket.getTecnico()).isEqualTo(tecnico2);
+        verify(emailService).notificaTecnicoNuovaAssegnazione(ticket, tecnico2);
+        verify(emailService).notificaUtenteStatoCambiato(ticket, Stato.ASSEGNATA);
     }
 
     // ─── Test 5: Selezione per score massimo ─────────────────────────────────────

@@ -36,15 +36,18 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
     private final TicketRepository ticketRepository;
     private final CambioStatoRepository cambioStatoRepository;
     private final AssegnazioneConfig config;
+    private final EmailService emailService;
 
     public AssegnazioneServiceImpl(TecnicoRepository tecnicoRepository,
                                    TicketRepository ticketRepository,
                                    CambioStatoRepository cambioStatoRepository,
-                                   AssegnazioneConfig config) {
+                                   AssegnazioneConfig config,
+                                   EmailService emailService) {
         this.tecnicoRepository = tecnicoRepository;
         this.ticketRepository = ticketRepository;
         this.cambioStatoRepository = cambioStatoRepository;
         this.config = config;
+        this.emailService = emailService;
     }
 
     /**
@@ -71,6 +74,9 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
 
             log.info("Ticket {} assegnato al tecnico {} (score: {})",
                     ticket.getId(), tecnico.getEmail(), score);
+
+            emailService.notificaTecnicoNuovaAssegnazione(ticket, tecnico);
+            emailService.notificaUtenteStatoCambiato(ticket, Stato.ASSEGNATA);
         } else {
             ticket.setStato(Stato.IN_ATTESA);
 
@@ -83,6 +89,8 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
 
             log.warn("Nessun tecnico disponibile per ticket {}, categoria {}",
                     ticket.getId(), ticket.getCategoria());
+
+            emailService.notificaAdminTicketInAttesa(ticket);
         }
     }
 
@@ -109,6 +117,9 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
 
             log.info("Ticket {} riassegnato al tecnico {} (score: {})",
                     ticket.getId(), nuovoTecnico.getEmail(), score);
+
+            emailService.notificaTecnicoNuovaAssegnazione(ticket, nuovoTecnico);
+            emailService.notificaUtenteStatoCambiato(ticket, Stato.ASSEGNATA);
         } else {
             ticket.setTecnico(null);
             ticket.setStato(Stato.IN_ATTESA);
@@ -121,6 +132,8 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
                     .build());
 
             log.warn("Nessun tecnico disponibile per riassegnazione ticket {}", ticket.getId());
+
+            emailService.notificaAdminTicketInAttesa(ticket);
         }
     }
 

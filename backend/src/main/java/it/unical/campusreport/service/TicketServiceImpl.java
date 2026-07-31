@@ -35,17 +35,20 @@ public class TicketServiceImpl implements TicketService {
     private final CambioStatoRepository cambioStatoRepository;
     private final NlpClient nlpClient;
     private final AssegnazioneService assegnazioneService;
+    private final EmailService emailService;
 
     public TicketServiceImpl(TicketRepository ticketRepository,
                              ZonaRepository zonaRepository,
                              CambioStatoRepository cambioStatoRepository,
                              NlpClient nlpClient,
-                             AssegnazioneService assegnazioneService) {
+                             AssegnazioneService assegnazioneService,
+                             EmailService emailService) {
         this.ticketRepository = ticketRepository;
         this.zonaRepository = zonaRepository;
         this.cambioStatoRepository = cambioStatoRepository;
         this.nlpClient = nlpClient;
         this.assegnazioneService = assegnazioneService;
+        this.emailService = emailService;
     }
 
     /**
@@ -194,6 +197,12 @@ public class TicketServiceImpl implements TicketService {
         cambioStatoRepository.save(cambioStato);
 
         log.info("Ticket {} aggiornato a stato {}", id, statoNuovo);
+
+        // ASSEGNATA è già notificata da AssegnazioneServiceImpl
+        if (statoNuovo == Stato.IN_LAVORAZIONE || statoNuovo == Stato.COMPLETATA) {
+            emailService.notificaUtenteStatoCambiato(ticket, statoNuovo);
+        }
+
         List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
         return toTicketResponse(ticket, storico);
     }
