@@ -1,0 +1,43 @@
+<nav class="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+  <a routerLink="/map" class="flex items-center gap-2 text-primary-600">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M4 21V8l8-5 8 5v13M9 21v-6h6v6M9 12h.01M15 12h.01M9 15h.01M15 15h.01" />
+    </svg>
+    <span class="text-lg font-bold">CampusReport</span>
+  </a>
+
+  <div class="hidden items-center gap-6 md:flex" *ngIf="isLoggedIn">
+    <a routerLink="/map" class="text-sm font-medium text-gray-600 transition hover:text-primary-600">La mia mappa</a>
+    <a routerLink="/tickets" class="text-sm font-medium text-gray-600 transition hover:text-primary-600">Le mie segnalazioni</a>
+  </div>
+
+  <div class="relative" *ngIf="isLoggedIn">
+    <button
+      type="button"
+      (click)="toggleMenu()"
+      class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white transition hover:bg-primary-700"
+    >
+      {{ iniziali }}
+    </button>
+
+    <div
+      *ngIf="menuAperto"
+      class="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+      (mouseleave)="chiudiMenu()"
+    >
+      <div class="border-b border-gray-100 px-4 py-2 text-sm text-gray-500">
+        {{ utente?.nome }} {{ utente?.cognome }}
+      </div>
+      <a routerLink="/tickets" (click)="chiudiMenu()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+        Il mio profilo
+      </a>
+      <button
+        type="button"
+        (click)="logout()"
+        class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50"
+      >
+        Esci
+      </button>
+    </div>
+  </div>
+</nav>
