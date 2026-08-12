@@ -1,0 +1,103 @@
+<div style="background: #f8fafc; min-height: calc(100vh - 64px)">
+  <div class="mx-auto max-w-5xl px-6 py-8">
+    <div *ngIf="caricamento" class="space-y-4">
+      <div class="h-4 w-64 animate-pulse rounded bg-gray-200"></div>
+      <div class="h-8 w-96 animate-pulse rounded bg-gray-200"></div>
+      <div class="h-64 animate-pulse rounded-xl bg-gray-200"></div>
+    </div>
+
+    <p *ngIf="errore" class="text-sm text-red-600">{{ errore }}</p>
+
+    <ng-container *ngIf="ticket as t">
+      <!-- Header -->
+      <p class="text-sm text-gray-400">
+        <a routerLink="/tickets" class="cursor-pointer hover:text-gray-600">Le mie segnalazioni</a>
+        →
+        {{ t.titolo }}
+      </p>
+
+      <div class="mt-2 flex items-start justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">{{ t.titolo }}</h1>
+        <span class="rounded-full px-3 py-1.5 text-sm font-medium" [ngClass]="STATO_BADGE_CLASS[t.stato]">
+          {{ STATO_LABEL[t.stato] }}
+        </span>
+      </div>
+
+      <div class="mt-6 grid grid-cols-3 gap-6">
+        <!-- Colonna sinistra -->
+        <div class="col-span-2 rounded-xl bg-white p-6 shadow-sm">
+          <div>
+            <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Descrizione</h3>
+            <p class="leading-relaxed text-gray-700">{{ t.descrizione }}</p>
+          </div>
+
+          <hr class="my-6 border-gray-100" />
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-gray-400">Categoria</p>
+              <p class="text-sm font-medium text-gray-900">{{ CATEGORIA_LABEL[t.categoria] }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Zona</p>
+              <p class="text-sm font-medium text-gray-900">{{ t.zona.nome }}</p>
+            </div>
+            <div *ngIf="t.cubo">
+              <p class="text-xs text-gray-400">Cubo</p>
+              <p class="text-sm font-medium text-gray-900">{{ t.cubo }}</p>
+            </div>
+            <div *ngIf="t.piano">
+              <p class="text-xs text-gray-400">Piano</p>
+              <p class="text-sm font-medium text-gray-900">{{ t.piano }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Priorità</p>
+              <p class="text-sm font-medium text-gray-900">{{ t.priorita }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Data creazione</p>
+              <p class="text-sm font-medium text-gray-900">{{ t.createdAt | date: 'dd MMM yyyy, HH:mm' }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="t.tecnico" class="mt-6 rounded-lg bg-blue-50 p-4">
+            <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Tecnico assegnato</h3>
+            <div class="flex items-center gap-3">
+              <div class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white" style="background: #1F4E79">
+                {{ inizialiTecnico }}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ t.tecnico.nome }} {{ t.tecnico.cognome }}</p>
+                <p class="text-xs text-gray-500">{{ t.tecnico.email }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonna destra: timeline -->
+        <div class="col-span-1 rounded-xl bg-white p-6 shadow-sm">
+          <h3 class="mb-4 font-semibold text-gray-900">Cronologia</h3>
+
+          <div *ngFor="let cs of t.storico; let last = last" class="relative flex gap-4">
+            <div *ngIf="!last" class="absolute bottom-0 left-3.5 top-8 w-px bg-gray-100"></div>
+            <div
+              class="z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 border-white shadow-sm"
+              [style.background-color]="STATO_COLOR[cs.statoNuovo]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" />
+              </svg>
+            </div>
+            <div class="pb-6">
+              <p class="text-sm font-medium text-gray-900">{{ STATO_LABEL[cs.statoNuovo] }}</p>
+              <p class="mt-0.5 text-xs text-gray-400">{{ cs.timestamp | date: 'dd MMM yyyy, HH:mm' }}</p>
+              <p *ngIf="cs.nota" class="mt-1 rounded bg-gray-50 px-2 py-1 text-xs text-gray-600">"{{ cs.nota }}"</p>
+            </div>
+          </div>
+
+          <p *ngIf="t.storico.length === 0" class="text-sm text-gray-400">Nessun evento registrato.</p>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

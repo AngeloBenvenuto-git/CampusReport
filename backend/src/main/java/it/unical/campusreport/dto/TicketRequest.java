@@ -17,6 +17,10 @@ public class TicketRequest {
     @NotNull(message = "La zona è obbligatoria")
     private UUID zonaId;
 
+    private String cubo;
+
+    private String piano;
+
     @NotBlank(message = "Il titolo è obbligatorio")
     @Size(max = 200, message = "Il titolo non può superare 200 caratteri")
     private String titolo;

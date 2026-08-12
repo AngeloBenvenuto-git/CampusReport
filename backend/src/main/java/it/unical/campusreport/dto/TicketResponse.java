@@ -22,6 +22,8 @@ public class TicketResponse {
     private Categoria categoria;
     private Stato stato;
     private Priorita priorita;
+    private String cubo;
+    private String piano;
     private ZonaResponse zona;
     private UserResponse segnalante;
     private UserResponse tecnico;

@@ -1,0 +1,120 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px)"
+  (click)="onClose()"
+>
+  <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+      <div class="flex items-center gap-2">
+        <h2 class="font-semibold text-gray-900">Nuova segnalazione</h2>
+        <span *ngIf="zona" class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
+          {{ zona.nome }}
+        </span>
+      </div>
+      <button type="button" class="text-gray-400 transition hover:text-gray-600" (click)="onClose()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="space-y-5 px-6 py-5">
+        <div *ngIf="!zona">
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
+          <select
+            formControlName="zonaId"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          >
+            <option [ngValue]="null">Seleziona una zona...</option>
+            <option *ngFor="let z of zoneOptions" [ngValue]="z.id">{{ z.nome }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cubo (opzionale)</label>
+          <input
+            type="text"
+            formControlName="cubo"
+            placeholder="es. 15B, 22C..."
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Piano</label>
+          <select
+            formControlName="piano"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          >
+            <option value="">Seleziona piano (opzionale)</option>
+            <option *ngFor="let p of piani" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Titolo *</label>
+          <input
+            type="text"
+            formControlName="titolo"
+            placeholder="Descrivi brevemente il problema"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Descrizione *</label>
+          <textarea
+            formControlName="descrizione"
+            rows="3"
+            placeholder="Fornisci maggiori dettagli sul problema..."
+            class="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Categoria *</label>
+          <div class="grid grid-cols-5 gap-2">
+            <div
+              *ngFor="let c of categorie"
+              (click)="selezionaCategoria(c.value)"
+              class="cursor-pointer rounded-xl border p-3 text-center transition-all"
+              [class.border-blue-500]="form.value.categoria === c.value"
+              [class.bg-blue-50]="form.value.categoria === c.value"
+              [class.border-gray-200]="form.value.categoria !== c.value"
+              [class.bg-white]="form.value.categoria !== c.value"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto mb-1 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="c.icona" />
+              </svg>
+              <span class="text-xs text-gray-700">{{ c.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <p *ngIf="errore" class="text-sm text-red-600">{{ errore }}</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="onClose()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Annulla
+        </button>
+        <button
+          type="submit"
+          [disabled]="form.invalid || inviando"
+          class="rounded-lg px-4 py-2 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+          style="background: #1F4E79"
+        >
+          {{ inviando ? 'Invio...' : 'Invia segnalazione' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

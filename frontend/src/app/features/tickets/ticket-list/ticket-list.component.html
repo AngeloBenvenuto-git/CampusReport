@@ -1,0 +1,152 @@
+<div style="background: #f8fafc; min-height: calc(100vh - 64px)">
+  <div class="mx-auto max-w-6xl px-6 py-8">
+    <!-- Header -->
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Le mie segnalazioni</h1>
+      <p class="text-gray-500">{{ totale }} segnalazioni totali</p>
+    </div>
+
+    <!-- Statistiche -->
+    <div class="mt-6 grid grid-cols-4 gap-4">
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p class="text-3xl font-bold" style="color: #1F4E79">{{ totale }}</p>
+        <p class="mt-1 text-sm text-gray-500">Totale</p>
+        <p *ngIf="trendTotale > 0" class="mt-2 text-xs text-green-600">+{{ trendTotale }} questo mese</p>
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p class="text-3xl font-bold" style="color: #F59E0B">{{ apertoAssegnato.length }}</p>
+        <p class="mt-1 text-sm text-gray-500">Aperte/Assegnate</p>
+        <p *ngIf="trendApertoAssegnato > 0" class="mt-2 text-xs text-green-600">+{{ trendApertoAssegnato }} questo mese</p>
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p class="text-3xl font-bold" style="color: #3B82F6">{{ inLavorazione.length }}</p>
+        <p class="mt-1 text-sm text-gray-500">In lavorazione</p>
+        <p *ngIf="trendInLavorazione > 0" class="mt-2 text-xs text-green-600">+{{ trendInLavorazione }} questo mese</p>
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p class="text-3xl font-bold" style="color: #10B981">{{ completate.length }}</p>
+        <p class="mt-1 text-sm text-gray-500">Completate</p>
+        <p *ngIf="trendCompletate > 0" class="mt-2 text-xs text-green-600">+{{ trendCompletate }} questo mese</p>
+      </div>
+    </div>
+
+    <!-- Grafici -->
+    <div class="mt-6 grid grid-cols-2 gap-4">
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 class="mb-4 font-semibold text-gray-900">Distribuzione per stato</h3>
+        <div *ngIf="totale === 0" class="py-10 text-center text-sm text-gray-400">Nessun dato disponibile</div>
+        <div *ngIf="totale > 0" class="flex items-center gap-6">
+          <svg viewBox="0 0 100 100" width="140" height="140" class="-rotate-90">
+            <circle cx="50" cy="50" [attr.r]="donutRaggio" fill="none" stroke="#F1F5F9" stroke-width="14" />
+            <circle
+              *ngFor="let s of donutSegmenti"
+              cx="50"
+              cy="50"
+              [attr.r]="donutRaggio"
+              fill="none"
+              [attr.stroke]="s.colore"
+              stroke-width="14"
+              [attr.stroke-dasharray]="s.dashArray"
+              [attr.stroke-dashoffset]="s.dashOffset"
+            />
+          </svg>
+          <div class="space-y-1.5">
+            <div *ngFor="let s of donutSegmenti" class="flex items-center gap-2 text-xs">
+              <span class="h-2.5 w-2.5 rounded-full" [style.background]="s.colore"></span>
+              <span class="text-gray-600">{{ s.label }}</span>
+              <span class="font-medium text-gray-900">{{ s.conteggio }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <h3 class="mb-4 font-semibold text-gray-900">Segnalazioni per categoria</h3>
+        <div *ngIf="totale === 0" class="py-10 text-center text-sm text-gray-400">Nessun dato disponibile</div>
+        <div *ngIf="totale > 0" class="space-y-3">
+          <div *ngFor="let b of barreCategorie" class="flex items-center gap-3">
+            <span class="w-24 flex-shrink-0 text-xs text-gray-500">{{ b.label }}</span>
+            <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div class="h-full rounded-full" style="background: #1F4E79" [style.width.%]="b.percentuale"></div>
+            </div>
+            <span class="w-6 flex-shrink-0 text-right text-xs font-medium text-gray-700">{{ b.conteggio }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtri -->
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <select [(ngModel)]="statoFiltro" class="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+        <option value="">Tutti gli stati</option>
+        <option *ngFor="let s of stati" [value]="s">{{ STATO_LABEL[s] }}</option>
+      </select>
+
+      <select [(ngModel)]="categoriaFiltro" class="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+        <option value="">Tutte le categorie</option>
+        <option *ngFor="let c of categorie" [value]="c">{{ CATEGORIA_LABEL[c] }}</option>
+      </select>
+
+      <div class="relative">
+        <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7" />
+          <path stroke-linecap="round" d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          [(ngModel)]="ricerca"
+          placeholder="Cerca per titolo..."
+          class="rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm"
+        />
+      </div>
+
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-sm text-gray-500">Ordina per</span>
+        <select [(ngModel)]="ordinamento" class="rounded-lg border border-gray-200 px-3 py-2 text-sm">
+          <option value="data_desc">Data ↓</option>
+          <option value="data_asc">Data ↑</option>
+          <option value="priorita">Priorità</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <div class="mt-4 space-y-3">
+      <div *ngIf="caricamento" class="space-y-3">
+        <div *ngFor="let _ of [1, 2, 3]" class="h-16 animate-pulse rounded-xl border border-gray-100 bg-white"></div>
+      </div>
+
+      <p *ngIf="errore" class="text-sm text-red-600">{{ errore }}</p>
+
+      <div
+        *ngFor="let t of ticketFiltrati"
+        (click)="apriDettaglio(t)"
+        class="flex cursor-pointer items-center gap-4 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm transition-all hover:shadow-md"
+      >
+        <span class="h-3 w-3 flex-shrink-0 rounded-full" [style.background]="STATO_COLOR[t.stato]"></span>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold text-gray-900">{{ t.titolo }}</p>
+          <div class="mt-1 flex items-center gap-2">
+            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ CATEGORIA_LABEL[t.categoria] }}</span>
+            <span class="text-gray-300">·</span>
+            <span class="text-xs text-gray-400">{{ t.zona.nome }}</span>
+            <ng-container *ngIf="t.cubo">
+              <span class="text-gray-300">·</span>
+              <span class="text-xs text-gray-400">Cubo {{ t.cubo }}</span>
+            </ng-container>
+          </div>
+        </div>
+        <div class="flex-shrink-0 text-right">
+          <span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="STATO_BADGE_CLASS[t.stato]">
+            {{ STATO_LABEL[t.stato] }}
+          </span>
+          <p class="mt-1 text-xs text-gray-400">{{ dataRelativa(t.createdAt) }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!caricamento && ticketFiltrati.length === 0" class="rounded-xl border border-gray-100 bg-white py-16 text-center text-sm text-gray-400">
+        Nessuna segnalazione trovata.
+      </div>
+    </div>
+  </div>
+</div>

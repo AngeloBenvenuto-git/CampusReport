@@ -1,0 +1,124 @@
+<div style="display: flex; height: calc(100vh - 64px); overflow: hidden; background: #f0ede8;">
+  <!-- SIDEBAR -->
+  <aside
+    class="flex w-[380px] flex-shrink-0 flex-col border-r border-gray-100 bg-white"
+    style="height: 100%; overflow-y: auto"
+  >
+    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+      <h2 class="font-semibold text-gray-900">Le mie segnalazioni</h2>
+      <button
+        type="button"
+        (click)="apriModal(null)"
+        class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+        style="background: #1F4E79"
+      >
+        + Nuova
+      </button>
+    </div>
+
+    <div class="flex border-b border-gray-100 px-5">
+      <button
+        type="button"
+        (click)="selezionaTab('tutte')"
+        class="border-b-2 px-3 py-2.5 text-sm"
+        [class.font-medium]="tabAttiva === 'tutte'"
+        [style.borderColor]="tabAttiva === 'tutte' ? '#1F4E79' : 'transparent'"
+        [style.color]="tabAttiva === 'tutte' ? '#1F4E79' : '#6B7280'"
+      >
+        Tutte
+      </button>
+      <button
+        type="button"
+        (click)="selezionaTab('attive')"
+        class="border-b-2 px-3 py-2.5 text-sm"
+        [class.font-medium]="tabAttiva === 'attive'"
+        [style.borderColor]="tabAttiva === 'attive' ? '#1F4E79' : 'transparent'"
+        [style.color]="tabAttiva === 'attive' ? '#1F4E79' : '#6B7280'"
+      >
+        Attive
+      </button>
+      <button
+        type="button"
+        (click)="selezionaTab('completate')"
+        class="border-b-2 px-3 py-2.5 text-sm"
+        [class.font-medium]="tabAttiva === 'completate'"
+        [style.borderColor]="tabAttiva === 'completate' ? '#1F4E79' : 'transparent'"
+        [style.color]="tabAttiva === 'completate' ? '#1F4E79' : '#6B7280'"
+      >
+        Completate
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <!-- Loading skeleton -->
+      <div *ngIf="caricamento" class="space-y-0">
+        <div *ngFor="let _ of [1, 2, 3, 4]" class="animate-pulse border-b border-gray-100 px-4 py-3">
+          <div class="flex gap-3">
+            <div class="mt-1.5 h-2 w-2 rounded-full bg-gray-200"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-3.5 w-3/4 rounded bg-gray-200"></div>
+              <div class="h-2.5 w-1/2 rounded bg-gray-100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div *ngIf="!caricamento">
+        <div
+          *ngFor="let t of ticketFiltrati"
+          (click)="apriDettaglio(t)"
+          class="flex cursor-pointer gap-3 border-b border-gray-100 px-4 py-3 hover:bg-gray-50"
+        >
+          <div class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" [style.background]="STATO_COLOR[t.stato]"></div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-bold text-gray-900">{{ t.titolo }}</p>
+            <p class="mt-0.5 text-xs text-gray-400">{{ t.zona.nome }} · {{ t.categoria }}</p>
+            <div class="mt-1 flex items-center justify-between">
+              <span class="rounded-full px-2 py-0.5 text-xs" [ngClass]="STATO_BADGE_CLASS[t.stato]">
+                {{ STATO_LABEL[t.stato] }}
+              </span>
+              <span class="text-xs text-gray-400">{{ dataRelativa(t.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vuoto -->
+        <div *ngIf="ticketFiltrati.length === 0" class="flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9 2 2 4-4" />
+          </svg>
+          <p class="text-sm text-gray-400">Nessuna segnalazione</p>
+          <button type="button" (click)="apriModal(null)" class="text-xs font-medium" style="color: #1F4E79">
+            Crea la prima
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-100 px-5 py-3">
+      <p class="text-xs text-gray-500">
+        {{ conteggioAperte }} Aperte · {{ conteggioInLavorazione }} In lavorazione · {{ conteggioCompletate }} Completate
+      </p>
+    </div>
+  </aside>
+
+  <!-- MAPPA -->
+  <div id="map" style="flex: 1; height: 100%; width: 100%;"></div>
+</div>
+
+<div
+  *ngIf="errore"
+  class="fixed left-1/2 top-20 -translate-x-1/2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 shadow"
+  style="z-index: 1000"
+>
+  {{ errore }}
+</div>
+
+<app-ticket-modal
+  *ngIf="modalAperto"
+  [zona]="zonaSelezionata"
+  [zoneOptions]="zoneBackend"
+  (chiudi)="chiudiModal()"
+  (ticketCreato)="onTicketCreato($event)"
+></app-ticket-modal>

@@ -34,3 +34,33 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+.leaflet-container {
+  background: #f0ede8 !important;
+}
+
+#map {
+  height: 100% !important;
+}
+
+#map .leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-tooltip-custom {
+  background: #1f4e79;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.leaflet-tooltip-custom::before {
+  border-top-color: #1f4e79;
+}

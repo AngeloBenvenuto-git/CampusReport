@@ -54,6 +54,8 @@ export interface TicketResponse {
   categoria: Categoria;
   stato: Stato;
   priorita: Priorita;
+  cubo: string;
+  piano: string;
   zona: ZonaResponse;
   segnalante: UserResponse;
   tecnico: UserResponse | null;
@@ -65,6 +67,8 @@ export interface TicketResponse {
 
 export interface TicketRequest {
   zonaId: string;
+  cubo?: string;
+  piano?: string;
   titolo: string;
   descrizione: string;
   categoria: Categoria;

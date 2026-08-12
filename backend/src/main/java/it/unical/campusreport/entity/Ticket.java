@@ -41,6 +41,12 @@ public class Ticket {
     @Column(nullable = false)
     private Priorita priorita;
 
+    @Column(name = "cubo", nullable = true)
+    private String cubo;
+
+    @Column(name = "piano", nullable = true)
+    private String piano;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zona_id", nullable = false)
     @ToString.Exclude
