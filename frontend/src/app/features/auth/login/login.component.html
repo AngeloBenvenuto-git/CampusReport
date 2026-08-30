@@ -137,7 +137,6 @@
         }
 
           <button type="submit"
-                  (click)="onSubmit()"
                   [ngStyle]="{'background-color': (loading || loginForm.invalid) ? '#94a3b8' : '#1F4E79', 'opacity': '1'}"
                   [disabled]="loading"
                   class="w-full text-white font-semibold py-3 rounded-xl text-sm transition-all active:scale-[0.98] hover:opacity-90 cursor-pointer">
