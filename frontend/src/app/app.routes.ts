@@ -16,7 +16,7 @@ export const routes: Routes = [
     path: 'map',
     component: MapComponent,
     canActivate: [authGuard, roleGuard],
-    data: { ruoli: ['STUDENTE', 'DOCENTE'] },
+    data: { ruoli: ['STUDENTE', 'DOCENTE', 'TECNICO', 'ADMIN'] },
   },
   {
     path: 'tickets',

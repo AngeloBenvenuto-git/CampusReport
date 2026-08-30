@@ -43,8 +43,15 @@ export class LoginComponent {
       .login({ email: email!, password: password! })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: () => this.router.navigate(['/map']),
+        next: (response) => {
+          console.log('[LoginComponent] Login riuscito, risposta backend:', response);
+          console.log('[LoginComponent] Token salvato in localStorage:', localStorage.getItem('campusreport_token'));
+          this.router.navigate(['/map']).then((navigated) => {
+            console.log('[LoginComponent] router.navigate(/map) esito:', navigated);
+          });
+        },
         error: (err: HttpErrorResponse) => {
+          console.error('[LoginComponent] Errore login:', err);
           this.errorMessage =
             err.status === 401 || err.status === 403
               ? 'Email o password non corretti.'

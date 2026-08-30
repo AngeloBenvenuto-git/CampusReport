@@ -64,3 +64,8 @@ body {
 .leaflet-tooltip-custom::before {
   border-top-color: #1f4e79;
 }
+
+app-ticket-modal {
+  position: fixed;
+  z-index: 9999;
+}

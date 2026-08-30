@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TicketService } from '../../../core/services/ticket.service';
@@ -39,9 +40,12 @@ export class TicketDetailComponent implements OnInit {
         this.ticket = ticket;
         this.caricamento = false;
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.caricamento = false;
-        this.errore = 'Impossibile caricare la segnalazione richiesta.';
+        this.errore =
+          err.status === 403
+            ? 'Non sei autorizzato a visualizzare questa segnalazione.'
+            : 'Impossibile caricare la segnalazione richiesta.';
       },
     });
   }

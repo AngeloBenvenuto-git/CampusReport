@@ -1,4 +1,4 @@
-<nav class="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+<nav class="sticky top-0 z-[9999] flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
   <a routerLink="/map" class="flex items-center gap-2 text-primary-600">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M4 21V8l8-5 8 5v13M9 21v-6h6v6M9 12h.01M15 12h.01M9 15h.01M15 15h.01" />
@@ -32,7 +32,7 @@
 
     <div
       *ngIf="menuAperto"
-      class="absolute right-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+      class="absolute right-0 z-[9999] mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
       (mouseleave)="chiudiMenu()"
     >
       <div class="border-b border-gray-100 px-4 py-2 text-sm text-gray-500">

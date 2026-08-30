@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import * as L from 'leaflet';
+import { AuthService } from '../../core/services/auth.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { Stato, TicketResponse, ZonaResponse } from '../../shared/models/ticket.models';
 import { CATEGORIA_INIZIALE, dataRelativa, STATO_BADGE_CLASS, STATO_COLOR, STATO_LABEL } from '../../shared/utils/ticket-display.util';
@@ -42,6 +43,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private ticketService: TicketService,
+    private authService: AuthService,
     private router: Router,
   ) {}
 
@@ -68,7 +70,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       },
     });
 
-    this.ticketService.getMyTickets().subscribe({
+    const ruolo = this.authService.getRuolo();
+    const tickets$ =
+      ruolo === 'TECNICO' ? this.ticketService.getTicketsAssegnati() : this.ticketService.getMyTickets();
+
+    tickets$.subscribe({
       next: (tickets) => {
         this.tickets = tickets;
         this.caricamento = false;

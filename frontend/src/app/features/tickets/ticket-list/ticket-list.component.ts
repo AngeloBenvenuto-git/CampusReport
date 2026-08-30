@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { Categoria, Stato, TicketResponse } from '../../../shared/models/ticket.models';
 import {
@@ -61,11 +62,19 @@ export class TicketListComponent implements OnInit {
 
   constructor(
     private ticketService: TicketService,
+    private authService: AuthService,
     private router: Router,
   ) {}
 
+  get titoloPagina(): string {
+    return this.authService.getRuolo() === 'TECNICO' ? 'Le mie segnalazioni assegnate' : 'Le mie segnalazioni';
+  }
+
   ngOnInit(): void {
-    this.ticketService.getMyTickets().subscribe({
+    const ruolo = this.authService.getRuolo();
+    const tickets$ = ruolo === 'TECNICO' ? this.ticketService.getTicketsAssegnati() : this.ticketService.getMyTickets();
+
+    tickets$.subscribe({
       next: (tickets) => {
         this.tickets = tickets;
         this.caricamento = false;

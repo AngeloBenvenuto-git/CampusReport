@@ -1,6 +1,9 @@
 <div
-  class="fixed inset-0 z-50 flex items-center justify-center p-4"
-  style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px)"
+  style="position: fixed; inset: 0; z-index: 9999;
+         background: rgba(0,0,0,0.5);
+         backdrop-filter: blur(4px);
+         display: flex; align-items: center;
+         justify-content: center; padding: 1rem;"
   (click)="onClose()"
 >
   <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
