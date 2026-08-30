@@ -1,0 +1,211 @@
+<div style="background: #F8FAFC; min-height: calc(100vh - 64px)">
+  <div class="mx-auto max-w-6xl px-6 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <p class="mb-1 text-sm text-gray-400">{{ oggi | date: 'EEEE d MMMM yyyy' }}</p>
+      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <p class="mt-1 text-gray-500">Bentornato, {{ nomeUtente }}. Hai {{ totaleAttive }} segnalazioni attive.</p>
+    </div>
+
+    <p *ngIf="errore" class="mb-4 text-sm text-red-600">{{ errore }}</p>
+
+    <div *ngIf="caricamento" class="mb-8 grid grid-cols-4 gap-4">
+      <div *ngFor="let _ of [1, 2, 3, 4]" class="h-24 animate-pulse rounded-xl border border-gray-100 bg-white"></div>
+    </div>
+
+    <ng-container *ngIf="!caricamento">
+      <!-- Card statistiche -->
+      <div class="mb-8 grid grid-cols-4 gap-4">
+        <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-3xl font-bold" style="color: #F59E0B">{{ assegnateOggi }}</p>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 3" />
+            </svg>
+          </div>
+          <p class="text-sm text-gray-500">Assegnate oggi</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-3xl font-bold" style="color: #3B82F6">{{ inLavorazione }}</p>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2 2.5-2.5Z" />
+            </svg>
+          </div>
+          <p class="text-sm text-gray-500">In lavorazione</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-3xl font-bold" style="color: #10B981">{{ completateQuestoMese }}</p>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7" />
+            </svg>
+          </div>
+          <p class="text-sm text-gray-500">Completate questo mese</p>
+        </div>
+
+        <div class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+          <p class="text-3xl font-bold" style="color: #1F4E79">{{ totaleAttive }} / {{ caricoMassimo }}</p>
+          <p class="text-sm text-gray-500">Carico attuale</p>
+          <div class="mt-2 h-1.5 rounded-full bg-gray-100">
+            <div class="h-1.5 rounded-full" style="background: #1F4E79" [style.width.%]="percentualeCarico"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segnalazioni attive -->
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900">Segnalazioni attive</h2>
+        <span class="text-xs text-gray-400">Ordinate per priorità</span>
+      </div>
+
+      <div class="space-y-3">
+        <div
+          *ngFor="let t of ticketAttivi"
+          class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+        >
+          <div class="flex items-start gap-4">
+            <!-- Badge priorità -->
+            <div class="mt-0.5 flex-shrink-0">
+              <span
+                *ngIf="t.priorita === 'ALTA'"
+                class="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600"
+              >
+                ↑ Alta
+              </span>
+              <span
+                *ngIf="t.priorita === 'NORMALE'"
+                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+              >
+                Normale
+              </span>
+            </div>
+
+            <!-- Contenuto -->
+            <div class="min-w-0 flex-1">
+              <div class="mb-1 flex items-center gap-2">
+                <h3 class="truncate font-semibold text-gray-900">{{ t.titolo }}</h3>
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="statoBadgeClass(t.stato)">
+                  {{ statoLabel(t.stato) }}
+                </span>
+              </div>
+              <p class="mb-2 line-clamp-2 text-sm text-gray-500">{{ t.descrizione }}</p>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                <span>📍 {{ t.zona.nome }}</span>
+                <span *ngIf="t.cubo">· Cubo {{ t.cubo }}</span>
+                <span *ngIf="t.piano">· {{ t.piano }}</span>
+                <span>· {{ t.categoria }}</span>
+                <span>· {{ dataRelativa(t.createdAt) }}</span>
+              </div>
+            </div>
+
+            <!-- Azioni -->
+            <div class="flex flex-shrink-0 flex-col gap-2">
+              <button
+                *ngIf="t.stato === 'ASSEGNATA'"
+                (click)="prendiInCarico(t)"
+                [disabled]="loading[t.id]"
+                class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+                style="background: #1F4E79"
+              >
+                Prendi in carico
+              </button>
+              <button
+                *ngIf="t.stato === 'IN_LAVORAZIONE'"
+                (click)="segnaCompletata(t)"
+                [disabled]="loading[t.id]"
+                class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+                style="background: #10B981"
+              >
+                Segna completata
+              </button>
+              <button
+                (click)="apriRifiuto(t)"
+                [disabled]="loading[t.id]"
+                class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-all hover:bg-red-50 disabled:opacity-50"
+              >
+                Rifiuta
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="ticketAttivi.length === 0" class="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">
+          <p class="text-sm text-gray-400">Nessuna segnalazione attiva al momento</p>
+        </div>
+      </div>
+
+      <!-- Completate di recente -->
+      <div class="mb-4 mt-8 flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900">Completate di recente</h2>
+        <span class="text-xs text-gray-400">{{ ticketCompletati.length }}</span>
+      </div>
+
+      <div class="divide-y divide-gray-100 rounded-xl border border-gray-100 bg-white shadow-sm">
+        <div *ngFor="let t of ticketCompletati" class="flex items-center gap-3 px-5 py-3">
+          <span class="h-2 w-2 flex-shrink-0 rounded-full" style="background: #10B981"></span>
+          <span class="flex-1 truncate text-sm font-medium text-gray-900">{{ t.titolo }}</span>
+          <span class="flex-shrink-0 text-xs text-gray-400">{{ t.zona.nome }}</span>
+          <span class="flex-shrink-0 text-xs text-gray-400">{{ dataRelativa(t.updatedAt) }}</span>
+        </div>
+
+        <div *ngIf="ticketCompletati.length === 0" class="p-8 text-center text-sm text-gray-400">
+          Nessuna segnalazione completata di recente.
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Modal rifiuto -->
+  <div
+    *ngIf="modalRifiutoAperto"
+    style="position: fixed; inset: 0; z-index: 9999;
+           background: rgba(0,0,0,0.5);
+           backdrop-filter: blur(4px);
+           display: flex; align-items: center;
+           justify-content: center; padding: 1rem;"
+    (click)="chiudiRifiuto()"
+  >
+    <div class="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Rifiuta segnalazione</h2>
+        <p class="mt-0.5 text-sm text-gray-500">{{ ticketDaRifiutare?.titolo }}</p>
+      </div>
+
+      <div class="space-y-2 px-6 py-5">
+        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Motivazione *</label>
+        <textarea
+          [(ngModel)]="motivazioneRifiuto"
+          rows="3"
+          placeholder="Spiega il motivo del rifiuto..."
+          class="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+        ></textarea>
+        <p *ngIf="motivazioneRifiuto.length > 0 && motivazioneRifiuto.trim().length < 10" class="text-xs text-red-500">
+          Inserisci almeno 10 caratteri.
+        </p>
+        <p *ngIf="erroreRifiuto" class="text-sm text-red-600">{{ erroreRifiuto }}</p>
+      </div>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="chiudiRifiuto()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="confermaRifiuto()"
+          [disabled]="motivazioneRifiuto.trim().length < 10 || inviandoRifiuto"
+          class="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {{ inviandoRifiuto ? 'Invio...' : 'Conferma rifiuto' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

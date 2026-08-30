@@ -32,4 +32,12 @@ export class TicketService {
   createTicket(request: TicketRequest): Observable<TicketResponse> {
     return this.http.post<TicketResponse>(`${this.apiUrl}/api/tickets`, request);
   }
+
+  aggiornaStato(id: string, request: { statoNuovo: string; nota: string | null }): Observable<TicketResponse> {
+    return this.http.patch<TicketResponse>(`${this.apiUrl}/api/tickets/${id}/stato`, request);
+  }
+
+  rifiutaTicket(id: string, request: { motivazione: string }): Observable<TicketResponse> {
+    return this.http.post<TicketResponse>(`${this.apiUrl}/api/tickets/${id}/rifiuta`, request);
+  }
 }

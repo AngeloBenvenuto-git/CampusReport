@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
+import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { LandingComponent } from './features/landing/landing.component';
 import { MapComponent } from './features/map/map.component';
 import { TicketDetailComponent } from './features/tickets/ticket-detail/ticket-detail.component';
@@ -17,6 +18,12 @@ export const routes: Routes = [
     component: MapComponent,
     canActivate: [authGuard, roleGuard],
     data: { ruoli: ['STUDENTE', 'DOCENTE', 'TECNICO', 'ADMIN'] },
+  },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { ruoli: ['TECNICO'] },
   },
   {
     path: 'tickets',

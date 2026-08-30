@@ -46,8 +46,9 @@ export class LoginComponent {
         next: (response) => {
           console.log('[LoginComponent] Login riuscito, risposta backend:', response);
           console.log('[LoginComponent] Token salvato in localStorage:', localStorage.getItem('campusreport_token'));
-          this.router.navigate(['/map']).then((navigated) => {
-            console.log('[LoginComponent] router.navigate(/map) esito:', navigated);
+          const destinazione = response.ruolo === 'TECNICO' ? '/dashboard' : '/map';
+          this.router.navigate([destinazione]).then((navigated) => {
+            console.log(`[LoginComponent] router.navigate(${destinazione}) esito:`, navigated);
           });
         },
         error: (err: HttpErrorResponse) => {
