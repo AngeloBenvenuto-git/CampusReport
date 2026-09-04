@@ -94,6 +94,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestisce la ricerca di un tecnico inesistente.
+     */
+    @ExceptionHandler(TecnicoNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleTecnicoNotFound(TecnicoNotFoundException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Tecnico non trovato", ex.getMessage());
+    }
+
+    /**
+     * Gestisce il tentativo di assegnare un ticket a un tecnico non attivo.
+     */
+    @ExceptionHandler(TecnicoNonAttivoException.class)
+    public ResponseEntity<Map<String, Object>> handleTecnicoNonAttivo(TecnicoNonAttivoException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Tecnico non attivo", ex.getMessage());
+    }
+
+    /**
+     * Gestisce pesi alpha/beta non validi per l'algoritmo di assegnazione.
+     */
+    @ExceptionHandler(ConfigPesiInvalidiException.class)
+    public ResponseEntity<Map<String, Object>> handleConfigPesiInvalidi(ConfigPesiInvalidiException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Pesi non validi", ex.getMessage());
+    }
+
+    /**
      * Gestisce conflitti di aggiornamento concorrente (optimistic locking).
      * Restituisce 409 Conflict per indicare che il ticket è stato modificato da un altro processo.
      */

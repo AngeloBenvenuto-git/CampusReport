@@ -30,6 +30,7 @@ class EmailServiceImplTest {
 
     private static final String FROM = "noreply@campusreport.local";
     private static final String ADMIN_EMAIL = "admin@campusreport.local";
+    private static final String FRONTEND_URL = "http://localhost:4200";
 
     @Mock private JavaMailSender mailSender;
 
@@ -37,7 +38,7 @@ class EmailServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new EmailServiceImpl(mailSender, FROM, ADMIN_EMAIL);
+        service = new EmailServiceImpl(mailSender, FROM, ADMIN_EMAIL, FRONTEND_URL);
     }
 
     private Zona buildZona() {

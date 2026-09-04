@@ -2,6 +2,7 @@ package it.unical.campusreport.repository;
 
 import it.unical.campusreport.entity.Tecnico;
 import it.unical.campusreport.entity.enums.Categoria;
+import it.unical.campusreport.entity.enums.Ruolo;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -24,4 +25,9 @@ public interface TecnicoRepository extends JpaRepository<Tecnico, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Tecnico t WHERE :categoria MEMBER OF t.specializzazioni AND t.attivo = true")
     List<Tecnico> findAttiviBySpecializzazioneWithLock(@Param("categoria") Categoria categoria);
+
+    /**
+     * Usata dal pannello admin per le statistiche sui tecnici attivi.
+     */
+    List<Tecnico> findByRuoloAndAttivo(Ruolo ruolo, boolean attivo);
 }

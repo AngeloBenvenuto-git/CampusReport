@@ -37,4 +37,13 @@ public interface EmailService {
      * @param ticket il ticket rimasto senza tecnico disponibile
      */
     void notificaAdminTicketInAttesa(Ticket ticket);
+
+    /**
+     * Invia a un tecnico appena creato dall'admin il link di attivazione
+     * dell'account (valido 48 ore) per impostare la propria password.
+     *
+     * @param tecnico l'account tecnico appena creato, non ancora attivo
+     * @param token   il token di attivazione da includere nel link
+     */
+    void inviaInvitoTecnico(User tecnico, String token);
 }

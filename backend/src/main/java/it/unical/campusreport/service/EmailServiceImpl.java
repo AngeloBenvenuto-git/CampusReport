@@ -24,13 +24,16 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final String from;
     private final String adminEmail;
+    private final String frontendUrl;
 
     public EmailServiceImpl(JavaMailSender mailSender,
                              @Value("${app.email.from}") String from,
-                             @Value("${app.email.admin-email}") String adminEmail) {
+                             @Value("${app.email.admin-email}") String adminEmail,
+                             @Value("${app.frontend.url}") String frontendUrl) {
         this.mailSender = mailSender;
         this.from = from;
         this.adminEmail = adminEmail;
+        this.frontendUrl = frontendUrl;
     }
 
     /**
@@ -138,6 +141,37 @@ public class EmailServiceImpl implements EmailService {
             log.info("Email di notifica admin inviata per ticket {} in attesa", ticket.getId());
         } catch (Exception e) {
             log.error("Errore nell'invio dell'email di notifica admin per ticket {}", ticket.getId(), e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void inviaInvitoTecnico(User tecnico, String token) {
+        try {
+            String link = frontendUrl + "/attiva?token=" + token;
+
+            String corpo = """
+                    Gentile %s,
+
+                    Le è stato creato un account tecnico su CampusReport.
+
+                    Per attivare l'account e impostare la propria password, acceda
+                    al seguente link entro 48 ore:
+
+                    %s
+
+                    Se non ha richiesto questo account, ignori pure questa email.
+
+                    CampusReport - Sistema segnalazioni Unical"""
+                    .formatted(tecnico.getNome(), link);
+
+            invia(tecnico.getEmail(), "[CampusReport] Attiva il tuo account tecnico", corpo);
+
+            log.info("Email di invito inviata al tecnico {}", tecnico.getEmail());
+        } catch (Exception e) {
+            log.error("Errore nell'invio dell'email di invito al tecnico {}", tecnico.getEmail(), e);
         }
     }
 
