@@ -1,0 +1,286 @@
+<div style="background: #F8FAFC; min-height: calc(100vh - 64px)">
+  <div class="mx-auto max-w-5xl px-6 py-8">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Gestione Tecnici</h1>
+      <button
+        type="button"
+        (click)="apriModalNuovo()"
+        class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+        style="background: #1F4E79"
+      >
+        + Nuovo Tecnico
+      </button>
+    </div>
+
+    <div *ngIf="messaggioSuccesso" class="mb-4 rounded-lg bg-green-50 px-4 py-2.5 text-sm text-green-700">
+      {{ messaggioSuccesso }}
+    </div>
+    <p *ngIf="errore" class="mb-4 text-sm text-red-600">{{ errore }}</p>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="caricamento" class="space-y-3">
+      <div *ngFor="let _ of [1, 2, 3]" class="h-28 animate-pulse rounded-xl border border-gray-100 bg-white"></div>
+    </div>
+
+    <div *ngIf="!caricamento && tecnici.length === 0" class="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">
+      <p class="text-sm text-gray-400">Nessun tecnico registrato.</p>
+    </div>
+
+    <!-- Lista tecnici -->
+    <div *ngIf="!caricamento">
+      <div *ngFor="let t of tecnici" class="mb-3 rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <!-- Sinistra: avatar + nome -->
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white">
+              {{ iniziali(t) }}
+            </div>
+            <div class="min-w-0">
+              <p class="truncate font-semibold text-gray-900">{{ t.nome }} {{ t.cognome }}</p>
+              <p class="truncate text-sm text-gray-500">{{ t.email }}</p>
+            </div>
+          </div>
+
+          <!-- Centro: specializzazioni + zona -->
+          <div class="md:flex-1 md:px-4">
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                *ngFor="let s of t.specializzazioni"
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+                [ngClass]="SPECIALIZZAZIONE_BADGE_CLASS[s]"
+              >
+                {{ CATEGORIA_LABEL[s] }}
+              </span>
+            </div>
+            <p class="mt-1.5 text-xs text-gray-400">Zona: {{ t.zona }}</p>
+          </div>
+
+          <!-- Destra colonna 1: carico -->
+          <div class="w-full md:w-40">
+            <div class="mb-1 flex items-center justify-between text-xs text-gray-500">
+              <span>Carico</span>
+              <span class="font-medium text-gray-900">{{ t.caricoAttuale }}/{{ t.caricoMassimo }}</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-gray-100">
+              <div
+                class="h-1.5 rounded-full"
+                [style.background]="caricoColore(t.caricoAttuale, t.caricoMassimo)"
+                [style.width.%]="percentualeCarico(t)"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Destra colonna 2: stato + azioni -->
+          <div class="flex flex-shrink-0 items-center gap-2">
+            <span
+              class="rounded-full px-2.5 py-1 text-xs font-medium"
+              [ngClass]="t.attivo ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'"
+            >
+              {{ t.attivo ? 'Attivo' : 'Inattivo' }}
+            </span>
+            <button
+              type="button"
+              (click)="apriModalModifica(t)"
+              class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            >
+              Modifica
+            </button>
+            <button
+              type="button"
+              (click)="cambiaStato(t)"
+              [disabled]="loadingStato[t.id]"
+              class="rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:opacity-50"
+              [ngClass]="t.attivo ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'"
+            >
+              {{ t.attivo ? 'Disattiva' : 'Attiva' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nuovo tecnico -->
+  <div
+    *ngIf="modalNuovoAperto"
+    style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;"
+    (click)="chiudiModalNuovo()"
+  >
+    <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Nuovo Tecnico</h2>
+      </div>
+
+      <form [formGroup]="formNuovo" (ngSubmit)="confermaNuovo()" class="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Nome *</label>
+            <input
+              type="text"
+              formControlName="nome"
+              class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cognome *</label>
+            <input
+              type="text"
+              formControlName="cognome"
+              class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Email *</label>
+          <input
+            type="email"
+            formControlName="email"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
+          <input
+            type="text"
+            formControlName="zona"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Specializzazioni *</label>
+          <div class="flex flex-wrap gap-3">
+            <label *ngFor="let c of categorie" class="flex items-center gap-1.5 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                [checked]="isSpecializzazioneSelezionataNuovo(c)"
+                (change)="toggleSpecializzazioneNuovo(c)"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              {{ CATEGORIA_LABEL[c] }}
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Carico massimo</label>
+          <input
+            type="number"
+            min="1"
+            formControlName="caricoMassimo"
+            class="w-32 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div class="rounded-lg bg-blue-50 px-4 py-3 text-xs text-blue-700">
+          Verrà inviata un'email di invito all'indirizzo specificato.
+        </div>
+
+        <p *ngIf="erroreNuovo" class="text-sm text-red-600">{{ erroreNuovo }}</p>
+      </form>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="chiudiModalNuovo()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="confermaNuovo()"
+          [disabled]="inviandoNuovo"
+          class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style="background: #1F4E79"
+        >
+          {{ inviandoNuovo ? 'Creazione...' : 'Crea Tecnico' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal modifica tecnico -->
+  <div
+    *ngIf="modalModificaAperto"
+    style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;"
+    (click)="chiudiModalModifica()"
+  >
+    <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Modifica Tecnico</h2>
+        <p class="mt-0.5 text-sm text-gray-500">{{ tecnicoInModifica?.nome }} {{ tecnicoInModifica?.cognome }}</p>
+      </div>
+
+      <form [formGroup]="formModifica" (ngSubmit)="confermaModifica()" class="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5">
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Email</label>
+          <input
+            type="email"
+            disabled
+            [value]="tecnicoInModifica?.email"
+            class="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400"
+          />
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
+          <input
+            type="text"
+            formControlName="zona"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="mb-2 block text-xs font-medium uppercase tracking-wide text-gray-500">Specializzazioni *</label>
+          <div class="flex flex-wrap gap-3">
+            <label *ngFor="let c of categorie" class="flex items-center gap-1.5 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                [checked]="isSpecializzazioneSelezionataModifica(c)"
+                (change)="toggleSpecializzazioneModifica(c)"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              {{ CATEGORIA_LABEL[c] }}
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Carico massimo</label>
+          <input
+            type="number"
+            min="1"
+            formControlName="caricoMassimo"
+            class="w-32 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          />
+        </div>
+
+        <p *ngIf="erroreModifica" class="text-sm text-red-600">{{ erroreModifica }}</p>
+      </form>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="chiudiModalModifica()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="confermaModifica()"
+          [disabled]="inviandoModifica"
+          class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style="background: #1F4E79"
+        >
+          {{ inviandoModifica ? 'Salvataggio...' : 'Salva modifiche' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

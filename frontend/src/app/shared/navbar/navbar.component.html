@@ -7,34 +7,62 @@
   </a>
 
   <div class="hidden items-center gap-6 md:flex" *ngIf="isLoggedIn">
-    <ng-container *ngIf="isTecnico; else linkStandard">
-      <a routerLink="/dashboard" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z" />
-        </svg>
-        Dashboard
-      </a>
-      <a routerLink="/map" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3-6-3" />
-        </svg>
-        La mia mappa
-      </a>
+    <ng-container [ngSwitch]="true">
+      <ng-container *ngSwitchCase="isAdmin">
+        <a routerLink="/admin" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z" />
+          </svg>
+          Dashboard
+        </a>
+        <a routerLink="/admin/tecnici" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-1a4 4 0 0 0-3-3.87M9 20H4v-1a4 4 0 0 1 3-3.87m5-1.13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6-2a4 4 0 1 0-1.32-7.77M7 8.23A4 4 0 1 0 5.68 16" />
+          </svg>
+          Tecnici
+        </a>
+        <a routerLink="/admin/tickets" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+          </svg>
+          Tutti i ticket
+        </a>
+        <a routerLink="/admin/config" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-3a7.4 7.4 0 0 1-.13 1.36l2.1 1.64-2 3.46-2.48-1a7.6 7.6 0 0 1-2.36 1.36L14.1 21H9.9l-.43-2.18a7.6 7.6 0 0 1-2.36-1.36l-2.48 1-2-3.46 2.1-1.64a7.4 7.4 0 0 1 0-2.72l-2.1-1.64 2-3.46 2.48 1a7.6 7.6 0 0 1 2.36-1.36L9.9 3h4.2l.43 2.18a7.6 7.6 0 0 1 2.36 1.36l2.48-1 2 3.46-2.1 1.64c.09.44.13.9.13 1.36Z" />
+          </svg>
+          Configurazione
+        </a>
+      </ng-container>
+      <ng-container *ngSwitchCase="isTecnico">
+        <a routerLink="/dashboard" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z" />
+          </svg>
+          Dashboard
+        </a>
+        <a routerLink="/map" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3-6-3" />
+          </svg>
+          La mia mappa
+        </a>
+      </ng-container>
+      <ng-container *ngSwitchDefault>
+        <a routerLink="/map" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3-6-3" />
+          </svg>
+          Mappa
+        </a>
+        <a routerLink="/tickets" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+          </svg>
+          Le mie segnalazioni
+        </a>
+      </ng-container>
     </ng-container>
-    <ng-template #linkStandard>
-      <a routerLink="/map" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3-6-3" />
-        </svg>
-        Mappa
-      </a>
-      <a routerLink="/tickets" class="flex items-center gap-1.5 text-sm font-medium text-gray-600 transition hover:text-primary-600">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-        </svg>
-        Le mie segnalazioni
-      </a>
-    </ng-template>
   </div>
 
   <div class="relative" *ngIf="isLoggedIn">

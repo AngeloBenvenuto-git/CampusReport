@@ -29,6 +29,10 @@ export class NavbarComponent {
     return this.authService.getRuolo() === 'TECNICO';
   }
 
+  get isAdmin(): boolean {
+    return this.authService.getRuolo() === 'ADMIN';
+  }
+
   get iniziali(): string {
     const utente = this.utente;
     if (!utente) {

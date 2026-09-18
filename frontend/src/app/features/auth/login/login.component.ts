@@ -50,8 +50,7 @@ export class LoginComponent {
           if (response.ruolo === 'TECNICO') {
             this.router.navigate(['/dashboard']);
           } else if (response.ruolo === 'ADMIN') {
-            // TODO: reindirizzare a /admin quando il pannello admin sarà implementato
-            this.router.navigate(['/map']);
+            this.router.navigate(['/admin']);
           } else {
             this.router.navigate(['/map']);
           }

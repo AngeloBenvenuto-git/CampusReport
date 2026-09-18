@@ -1,0 +1,180 @@
+<div style="background: #F8FAFC; min-height: calc(100vh - 64px)">
+  <div class="mx-auto max-w-6xl px-6 py-8">
+    <!-- Header -->
+    <div class="mb-2 flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-900">Tutti i ticket</h1>
+      <button
+        type="button"
+        (click)="esportaCsv()"
+        [disabled]="esportando"
+        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+      >
+        {{ esportando ? 'Esportazione...' : 'Esporta CSV' }}
+      </button>
+    </div>
+
+    <!-- Filtri -->
+    <div class="mb-6 mt-4 flex flex-wrap gap-3">
+      <select
+        [(ngModel)]="statoFiltro"
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      >
+        <option value="">Tutti gli stati</option>
+        <option *ngFor="let s of stati" [value]="s">{{ STATO_LABEL[s] }}</option>
+      </select>
+
+      <select
+        [(ngModel)]="categoriaFiltro"
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      >
+        <option value="">Tutte le categorie</option>
+        <option *ngFor="let c of categorie" [value]="c">{{ CATEGORIA_LABEL[c] }}</option>
+      </select>
+
+      <select
+        [(ngModel)]="tecnicoFiltro"
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      >
+        <option value="">Tutti i tecnici</option>
+        <option *ngFor="let t of tecnici" [value]="t.id">{{ t.nome }} {{ t.cognome }}</option>
+      </select>
+
+      <input
+        type="text"
+        [(ngModel)]="ricercaFiltro"
+        placeholder="Cerca per titolo..."
+        class="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      />
+
+      <button
+        type="button"
+        (click)="applicaFiltri()"
+        class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+        style="background: #1F4E79"
+      >
+        Applica filtri
+      </button>
+      <button
+        type="button"
+        (click)="resetFiltri()"
+        class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
+      >
+        Reset
+      </button>
+    </div>
+
+    <p *ngIf="errore" class="mb-4 text-sm text-red-600">{{ errore }}</p>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="caricamento" class="space-y-2">
+      <div *ngFor="let _ of [1, 2, 3, 4, 5]" class="h-20 animate-pulse rounded-xl border border-gray-100 bg-white"></div>
+    </div>
+
+    <div *ngIf="!caricamento && tickets.length === 0" class="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">
+      <p class="text-sm text-gray-400">Nessun ticket trovato con i filtri selezionati.</p>
+    </div>
+
+    <!-- Lista ticket -->
+    <div *ngIf="!caricamento">
+      <div *ngFor="let t of tickets" class="mb-2 rounded-xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex min-w-0 items-start gap-3">
+            <span class="mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full" [style.background]="STATO_COLOR[t.stato]"></span>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="truncate font-semibold text-gray-900">{{ t.titolo }}</h3>
+                <span *ngIf="t.priorita === 'ALTA'" class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                  Alta
+                </span>
+              </div>
+              <p class="line-clamp-1 text-sm text-gray-500">{{ t.descrizione }}</p>
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">{{ CATEGORIA_LABEL[t.categoria] }}</span>
+                <span>📍 {{ t.zona.nome }}</span>
+                <span *ngIf="t.cubo">· Cubo {{ t.cubo }}</span>
+                <span
+                  >· Tecnico:
+                  <span [class.text-red-500]="!nomeTecnico(t)" [class.font-medium]="!nomeTecnico(t)">
+                    {{ nomeTecnico(t) ?? 'Non assegnato' }}
+                  </span>
+                </span>
+                <span>· {{ dataRelativa(t.createdAt) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-shrink-0 items-center gap-2 self-end md:self-center">
+            <span class="rounded-full px-2.5 py-1 text-xs font-medium" [style.background]="STATO_COLOR[t.stato] + '1A'" [style.color]="STATO_COLOR[t.stato]">
+              {{ STATO_LABEL[t.stato] }}
+            </span>
+            <button
+              *ngIf="t.stato === 'IN_ATTESA'"
+              type="button"
+              (click)="apriAssegna(t)"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+              style="background: #F59E0B"
+            >
+              Assegna
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal assegnazione manuale -->
+  <div
+    *ngIf="modalAssegnaAperto"
+    style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;"
+    (click)="chiudiAssegna()"
+  >
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Assegna segnalazione</h2>
+        <p class="mt-0.5 text-sm text-gray-500">{{ ticketDaAssegnare?.titolo }}</p>
+        <span class="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+          {{ ticketDaAssegnare ? CATEGORIA_LABEL[ticketDaAssegnare.categoria] : '' }}
+        </span>
+      </div>
+
+      <div class="space-y-3 px-6 py-5">
+        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tecnico *</label>
+        <select
+          [(ngModel)]="tecnicoSelezionatoId"
+          class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+        >
+          <option value="">Seleziona un tecnico</option>
+          <option *ngFor="let t of (ticketDaAssegnare ? tecniciDisponibiliPerAssegnazione(ticketDaAssegnare) : [])" [value]="t.id">
+            {{ t.nome }} {{ t.cognome }} ({{ t.caricoAttuale }}/{{ t.caricoMassimo }})
+          </option>
+        </select>
+        <p
+          *ngIf="ticketDaAssegnare && tecniciDisponibiliPerAssegnazione(ticketDaAssegnare).length === 0"
+          class="text-xs text-gray-400"
+        >
+          Nessun tecnico attivo con questa specializzazione.
+        </p>
+        <p *ngIf="erroreAssegna" class="text-sm text-red-600">{{ erroreAssegna }}</p>
+      </div>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="chiudiAssegna()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="confermaAssegna()"
+          [disabled]="!tecnicoSelezionatoId || assegnando"
+          class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          style="background: #1F4E79"
+        >
+          {{ assegnando ? 'Assegnazione...' : 'Assegna' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
