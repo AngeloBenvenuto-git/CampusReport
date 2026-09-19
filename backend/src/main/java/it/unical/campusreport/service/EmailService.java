@@ -46,4 +46,13 @@ public interface EmailService {
      * @param token   il token di attivazione da includere nel link
      */
     void inviaInvitoTecnico(User tecnico, String token);
+
+    /**
+     * Notifica il segnalante che la sua segnalazione è stata rifiutata
+     * definitivamente dal tecnico ed eliminata dal sistema.
+     *
+     * @param ticket      il ticket rifiutato (non ancora eliminato al momento della chiamata)
+     * @param motivazione il motivo del rifiuto fornito dal tecnico
+     */
+    void notificaRifiutoDefinitivo(Ticket ticket, String motivazione);
 }

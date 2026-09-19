@@ -169,18 +169,67 @@
            justify-content: center; padding: 1rem;"
     (click)="chiudiRifiuto()"
   >
-    <div class="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
       <div class="border-b border-gray-100 px-6 py-4">
         <h2 class="font-semibold text-gray-900">Rifiuta segnalazione</h2>
         <p class="mt-0.5 text-sm text-gray-500">{{ ticketDaRifiutare?.titolo }}</p>
       </div>
 
-      <div class="space-y-2 px-6 py-5">
+      <!-- STEP 1 — scelta tipo rifiuto -->
+      <div *ngIf="!tipoRifiutoSelezionato" class="space-y-3 px-6 py-5">
+        <button
+          type="button"
+          (click)="selezionaTipoRifiuto(TipoRifiuto.RIASSEGNA)"
+          class="w-full rounded-xl border-2 border-gray-200 p-4 text-left transition hover:border-blue-300 hover:bg-blue-50"
+        >
+          <div class="mb-1 flex items-center gap-2">
+            <span class="text-lg">↪️👥</span>
+            <span class="font-semibold text-gray-900">Rifiuta e riassegna</span>
+          </div>
+          <p class="text-xs text-gray-500">
+            La segnalazione verrà assegnata automaticamente ad un altro tecnico disponibile.
+          </p>
+        </button>
+
+        <button
+          type="button"
+          (click)="selezionaTipoRifiuto(TipoRifiuto.ELIMINA)"
+          class="w-full rounded-xl border-2 border-gray-200 p-4 text-left transition hover:border-red-300 hover:bg-red-50"
+        >
+          <div class="mb-1 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg text-red-600">✕</span>
+              <span class="font-semibold text-gray-900">Rifiuta definitivamente</span>
+            </div>
+            <span class="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-600">
+              Azione irreversibile
+            </span>
+          </div>
+          <p class="text-xs text-gray-500">
+            La segnalazione verrà eliminata dal sistema. L'utente verrà notificato via email.
+          </p>
+        </button>
+      </div>
+
+      <!-- STEP 2 — motivazione -->
+      <div *ngIf="tipoRifiutoSelezionato" class="space-y-2 px-6 py-5">
+        <p
+          *ngIf="tipoRifiutoSelezionato === TipoRifiuto.ELIMINA"
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+        >
+          ⚠️ Attenzione: questa azione è irreversibile. La segnalazione verrà eliminata
+          definitivamente e l'utente riceverà una email con il tuo motivo.
+        </p>
+
         <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Motivazione *</label>
         <textarea
           [(ngModel)]="motivazioneRifiuto"
           rows="3"
-          placeholder="Spiega il motivo del rifiuto..."
+          [placeholder]="
+            tipoRifiutoSelezionato === TipoRifiuto.ELIMINA
+              ? 'Spiega perché questa segnalazione è inopportuna o non valida...'
+              : 'Spiega perché non puoi gestire questa segnalazione...'
+          "
           class="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
         ></textarea>
         <p *ngIf="motivazioneRifiuto.length > 0 && motivazioneRifiuto.trim().length < 10" class="text-xs text-red-500">
@@ -191,6 +240,7 @@
 
       <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
         <button
+          *ngIf="!tipoRifiutoSelezionato"
           type="button"
           (click)="chiudiRifiuto()"
           class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
@@ -198,10 +248,20 @@
           Annulla
         </button>
         <button
+          *ngIf="tipoRifiutoSelezionato"
+          type="button"
+          (click)="tornaIndietroRifiuto()"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+        >
+          Indietro
+        </button>
+        <button
+          *ngIf="tipoRifiutoSelezionato"
           type="button"
           (click)="confermaRifiuto()"
           [disabled]="motivazioneRifiuto.trim().length < 10 || inviandoRifiuto"
-          class="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          class="rounded-lg px-4 py-2 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+          [ngClass]="tipoRifiutoSelezionato === TipoRifiuto.ELIMINA ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'"
         >
           {{ inviandoRifiuto ? 'Invio...' : 'Conferma rifiuto' }}
         </button>

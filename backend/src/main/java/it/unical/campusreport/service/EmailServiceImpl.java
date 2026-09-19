@@ -175,6 +175,38 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void notificaRifiutoDefinitivo(Ticket ticket, String motivazione) {
+        try {
+            User segnalante = ticket.getSegnalante();
+
+            String corpo = """
+                    Gentile %s,
+
+                    La sua segnalazione '%s' è stata rifiutata
+                    dal tecnico competente.
+
+                    Motivo del rifiuto:
+                    %s
+
+                    Se ritiene che il rifiuto non sia giustificato,
+                    può inviare una nuova segnalazione o contattare
+                    l'ufficio tecnico dell'ateneo.
+
+                    CampusReport - Sistema segnalazioni Unical"""
+                    .formatted(segnalante.getNome(), ticket.getTitolo(), motivazione);
+
+            invia(segnalante.getEmail(), "[CampusReport] La tua segnalazione è stata rifiutata", corpo);
+
+            log.info("Email di rifiuto definitivo inviata a {} per ticket {}", segnalante.getEmail(), ticket.getId());
+        } catch (Exception e) {
+            log.error("Errore nell'invio dell'email di rifiuto definitivo per ticket {}", ticket.getId(), e);
+        }
+    }
+
     // ─── Helper privati ─────────────────────────────────────────────────────────
 
     private void invia(String to, String oggetto, String corpo) {

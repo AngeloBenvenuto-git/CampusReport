@@ -4,7 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { TicketService } from '../../core/services/ticket.service';
-import { Priorita, Stato, TicketResponse } from '../../shared/models/ticket.models';
+import { Priorita, Stato, TicketResponse, TipoRifiuto } from '../../shared/models/ticket.models';
 import { dataRelativa, STATO_BADGE_CLASS, STATO_LABEL } from '../../shared/utils/ticket-display.util';
 
 const CARICO_MASSIMO = 10;
@@ -28,9 +28,12 @@ export class DashboardComponent implements OnInit {
 
   modalRifiutoAperto = false;
   ticketDaRifiutare: TicketResponse | null = null;
+  tipoRifiutoSelezionato: TipoRifiuto | null = null;
   motivazioneRifiuto = '';
   erroreRifiuto: string | null = null;
   inviandoRifiuto = false;
+
+  readonly TipoRifiuto = TipoRifiuto;
 
   constructor(
     private ticketService: TicketService,
@@ -146,37 +149,58 @@ export class DashboardComponent implements OnInit {
 
   apriRifiuto(ticket: TicketResponse): void {
     this.ticketDaRifiutare = ticket;
+    this.tipoRifiutoSelezionato = null;
     this.motivazioneRifiuto = '';
     this.erroreRifiuto = null;
     this.modalRifiutoAperto = true;
   }
 
+  selezionaTipoRifiuto(tipo: TipoRifiuto): void {
+    this.tipoRifiutoSelezionato = tipo;
+  }
+
+  tornaIndietroRifiuto(): void {
+    this.tipoRifiutoSelezionato = null;
+    this.motivazioneRifiuto = '';
+    this.erroreRifiuto = null;
+  }
+
   chiudiRifiuto(): void {
     this.modalRifiutoAperto = false;
     this.ticketDaRifiutare = null;
+    this.tipoRifiutoSelezionato = null;
+    this.motivazioneRifiuto = '';
+    this.erroreRifiuto = null;
   }
 
   confermaRifiuto(): void {
-    if (!this.ticketDaRifiutare || this.motivazioneRifiuto.trim().length < 10) return;
+    if (!this.ticketDaRifiutare || !this.tipoRifiutoSelezionato || this.motivazioneRifiuto.trim().length < 10) return;
 
     const ticketId = this.ticketDaRifiutare.id;
     this.inviandoRifiuto = true;
     this.erroreRifiuto = null;
 
-    this.ticketService.rifiutaTicket(ticketId, { motivazione: this.motivazioneRifiuto.trim() }).subscribe({
-      next: () => {
-        this.tickets = this.tickets.filter((t) => t.id !== ticketId);
-        this.inviandoRifiuto = false;
-        this.modalRifiutoAperto = false;
-        this.ticketDaRifiutare = null;
-      },
-      error: (err: HttpErrorResponse) => {
-        this.inviandoRifiuto = false;
-        this.erroreRifiuto =
-          err.status === 400
-            ? 'Motivazione non valida.'
-            : 'Impossibile rifiutare la segnalazione. Riprova più tardi.';
-      },
-    });
+    this.ticketService
+      .rifiutaTicket(ticketId, {
+        motivazione: this.motivazioneRifiuto.trim(),
+        tipoRifiuto: this.tipoRifiutoSelezionato,
+      })
+      .subscribe({
+        next: () => {
+          // RIASSEGNA: il ticket ora ha un nuovo tecnico o è IN_ATTESA, non più assegnato a questo tecnico.
+          // ELIMINA: il ticket non esiste più (204 No Content).
+          // In entrambi i casi va rimosso dalla lista locale del tecnico.
+          this.tickets = this.tickets.filter((t) => t.id !== ticketId);
+          this.inviandoRifiuto = false;
+          this.chiudiRifiuto();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.inviandoRifiuto = false;
+          this.erroreRifiuto =
+            err.status === 400
+              ? 'Motivazione non valida.'
+              : 'Impossibile rifiutare la segnalazione. Riprova più tardi.';
+        },
+      });
   }
 }

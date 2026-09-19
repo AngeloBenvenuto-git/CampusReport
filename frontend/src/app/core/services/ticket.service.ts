@@ -37,7 +37,12 @@ export class TicketService {
     return this.http.patch<TicketResponse>(`${this.apiUrl}/api/tickets/${id}/stato`, request);
   }
 
-  rifiutaTicket(id: string, request: { motivazione: string }): Observable<TicketResponse> {
-    return this.http.post<TicketResponse>(`${this.apiUrl}/api/tickets/${id}/rifiuta`, request);
+  rifiutaTicket(
+    id: string,
+    request: { motivazione: string; tipoRifiuto: 'RIASSEGNA' | 'ELIMINA' },
+  ): Observable<TicketResponse | null> {
+    // Con tipoRifiuto = ELIMINA il backend risponde 204 No Content: HttpClient
+    // restituisce `null` come valore emesso, senza passare per l'error handler.
+    return this.http.post<TicketResponse | null>(`${this.apiUrl}/api/tickets/${id}/rifiuta`, request);
   }
 }

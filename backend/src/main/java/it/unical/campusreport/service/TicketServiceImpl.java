@@ -1,6 +1,7 @@
 package it.unical.campusreport.service;
 
 import it.unical.campusreport.dto.*;
+import it.unical.campusreport.entity.Allegato;
 import it.unical.campusreport.entity.CambioStato;
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
@@ -9,10 +10,12 @@ import it.unical.campusreport.entity.enums.Categoria;
 import it.unical.campusreport.entity.enums.Priorita;
 import it.unical.campusreport.entity.enums.Ruolo;
 import it.unical.campusreport.entity.enums.Stato;
+import it.unical.campusreport.entity.enums.TipoRifiuto;
 import it.unical.campusreport.exception.InvalidStatoTransitionException;
 import it.unical.campusreport.exception.TicketNotFoundException;
 import it.unical.campusreport.exception.UnauthorizedTicketAccessException;
 import it.unical.campusreport.exception.ZonaNotFoundException;
+import it.unical.campusreport.repository.AllegatoRepository;
 import it.unical.campusreport.repository.CambioStatoRepository;
 import it.unical.campusreport.repository.TicketRepository;
 import it.unical.campusreport.repository.ZonaRepository;
@@ -20,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,6 +39,7 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
     private final ZonaRepository zonaRepository;
     private final CambioStatoRepository cambioStatoRepository;
+    private final AllegatoRepository allegatoRepository;
     private final NlpClient nlpClient;
     private final AssegnazioneService assegnazioneService;
     private final EmailService emailService;
@@ -40,12 +47,14 @@ public class TicketServiceImpl implements TicketService {
     public TicketServiceImpl(TicketRepository ticketRepository,
                              ZonaRepository zonaRepository,
                              CambioStatoRepository cambioStatoRepository,
+                             AllegatoRepository allegatoRepository,
                              NlpClient nlpClient,
                              AssegnazioneService assegnazioneService,
                              EmailService emailService) {
         this.ticketRepository = ticketRepository;
         this.zonaRepository = zonaRepository;
         this.cambioStatoRepository = cambioStatoRepository;
+        this.allegatoRepository = allegatoRepository;
         this.nlpClient = nlpClient;
         this.assegnazioneService = assegnazioneService;
         this.emailService = emailService;
@@ -215,7 +224,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public TicketResponse rifiutaTicket(UUID id, RifiutoRequest request, User tecnico) {
-        log.info("Tecnico {} rifiuta ticket {}", tecnico.getEmail(), id);
+        log.info("Tecnico {} rifiuta ticket {} (tipo: {})", tecnico.getEmail(), id, request.getTipoRifiuto());
 
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket non trovato con id: " + id));
@@ -225,6 +234,18 @@ public class TicketServiceImpl implements TicketService {
         }
 
         Stato statoPrecedente = ticket.getStato();
+
+        if (request.getTipoRifiuto() == TipoRifiuto.ELIMINA) {
+            return rifiutaEliminaTicket(ticket, statoPrecedente, request, tecnico);
+        }
+        return rifiutaRiassegnaTicket(ticket, statoPrecedente, request, tecnico);
+    }
+
+    /**
+     * CASO 2 — rifiuta e riassegna automaticamente ad un altro tecnico disponibile.
+     */
+    private TicketResponse rifiutaRiassegnaTicket(Ticket ticket, Stato statoPrecedente,
+                                                  RifiutoRequest request, User tecnico) {
         ticket.setStato(Stato.RIFIUTATA);
         ticket.setTecnico(null);
         ticket = ticketRepository.save(ticket);
@@ -241,9 +262,50 @@ public class TicketServiceImpl implements TicketService {
         assegnazioneService.riassegna(ticket, tecnico.getId());
         ticket = ticketRepository.save(ticket);
 
-        log.info("Ticket {} rifiutato da {}, nuovo stato: {}", id, tecnico.getEmail(), ticket.getStato());
+        log.info("Ticket {} rifiutato da {}, nuovo stato: {}", ticket.getId(), tecnico.getEmail(), ticket.getStato());
         List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
         return toTicketResponse(ticket, storico);
+    }
+
+    /**
+     * CASO 3 — rifiuto definitivo: notifica il segnalante ed elimina la segnalazione
+     * (allegati su filesystem, storico cambio-stato e ticket) dal sistema.
+     */
+    private TicketResponse rifiutaEliminaTicket(Ticket ticket, Stato statoPrecedente,
+                                                RifiutoRequest request, User tecnico) {
+        UUID ticketId = ticket.getId();
+        String titolo = ticket.getTitolo();
+
+        cambioStatoRepository.save(CambioStato.builder()
+                .ticket(ticket)
+                .statoPrecedente(statoPrecedente)
+                .statoNuovo(Stato.RIFIUTATA)
+                .utente(tecnico)
+                .nota("ELIMINATA: " + request.getMotivazione())
+                .build());
+
+        emailService.notificaRifiutoDefinitivo(ticket, request.getMotivazione());
+
+        eliminaAllegatiDaFilesystem(ticket);
+        allegatoRepository.deleteAll(allegatoRepository.findByTicket(ticket));
+        cambioStatoRepository.deleteAll(cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket));
+        ticketRepository.delete(ticket);
+
+        log.info("Ticket {} ('{}') eliminato definitivamente da {} con motivazione: {}",
+                ticketId, titolo, tecnico.getEmail(), request.getMotivazione());
+
+        return null;
+    }
+
+    private void eliminaAllegatiDaFilesystem(Ticket ticket) {
+        for (Allegato allegato : allegatoRepository.findByTicket(ticket)) {
+            try {
+                Files.deleteIfExists(Paths.get(allegato.getPath()));
+            } catch (IOException e) {
+                log.warn("Impossibile eliminare l'allegato {} dal filesystem per il ticket {}",
+                        allegato.getFilename(), ticket.getId(), e);
+            }
+        }
     }
 
     // ─── Mapping helpers ────────────────────────────────────────────────────────

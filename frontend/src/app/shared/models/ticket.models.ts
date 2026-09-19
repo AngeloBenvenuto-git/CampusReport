@@ -22,6 +22,11 @@ export enum Priorita {
   ALTA = 'ALTA',
 }
 
+export enum TipoRifiuto {
+  RIASSEGNA = 'RIASSEGNA',
+  ELIMINA = 'ELIMINA',
+}
+
 export interface ZonaResponse {
   id: string;
   nome: string;

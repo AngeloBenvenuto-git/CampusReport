@@ -52,12 +52,12 @@ public class TicketController {
     }
 
     /**
-     * Restituisce i ticket dell'utente autenticato. Accessibile a STUDENTE e DOCENTE.
+     * Restituisce i ticket dell'utente autenticato. Accessibile a STUDENTE, DOCENTE e ADMIN.
      *
      * @return lista ticket dell'utente
      */
     @GetMapping("/miei")
-    @PreAuthorize("hasAnyRole('STUDENTE', 'DOCENTE')")
+    @PreAuthorize("hasAnyRole('STUDENTE', 'DOCENTE', 'ADMIN')")
     public ResponseEntity<List<TicketResponse>> getMieiTicket() {
         User utente = getCurrentUser();
         log.debug("Recupero ticket di {}", utente.getEmail());
@@ -111,9 +111,13 @@ public class TicketController {
     /**
      * Rifiuta un ticket con motivazione obbligatoria. Accessibile a TECNICO.
      *
+     * <p>Con {@code tipoRifiuto = RIASSEGNA} restituisce 200 con il ticket riassegnato.
+     * Con {@code tipoRifiuto = ELIMINA} il ticket viene eliminato definitivamente e
+     * viene restituito 204 No Content.
+     *
      * @param id      identificativo del ticket
-     * @param request motivazione del rifiuto
-     * @return ticket aggiornato con stato RIFIUTATA
+     * @param request tipo di rifiuto e motivazione
+     * @return ticket aggiornato, oppure 204 No Content se eliminato definitivamente
      */
     @PostMapping("/{id}/rifiuta")
     @PreAuthorize("hasRole('TECNICO')")
@@ -121,7 +125,11 @@ public class TicketController {
                                                         @Valid @RequestBody RifiutoRequest request) {
         User tecnico = getCurrentUser();
         log.info("Tecnico {} rifiuta ticket {}", tecnico.getEmail(), id);
-        return ResponseEntity.ok(ticketService.rifiutaTicket(id, request, tecnico));
+        TicketResponse response = ticketService.rifiutaTicket(id, request, tecnico);
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(response);
     }
 
     private User getCurrentUser() {

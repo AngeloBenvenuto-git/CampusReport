@@ -155,6 +155,38 @@ class EmailServiceImplTest {
                 .contains("- Segnalante: luca@studenti.unical.it");
     }
 
+    // ─── notificaRifiutoDefinitivo ───────────────────────────────────────────────
+
+    @Test
+    void notificaRifiutoDefinitivo_inviaEmailAlSegnalanteConMotivazione() {
+        User segnalante = buildUser("Luca", "luca@studenti.unical.it", Ruolo.STUDENTE);
+        Ticket ticket = buildTicket(segnalante);
+
+        service.notificaRifiutoDefinitivo(ticket, "Segnalazione non pertinente alla categoria");
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+        SimpleMailMessage message = captor.getValue();
+
+        assertThat(message.getTo()).containsExactly("luca@studenti.unical.it");
+        assertThat(message.getSubject()).isEqualTo("[CampusReport] La tua segnalazione è stata rifiutata");
+        assertThat(message.getText())
+                .contains("Gentile Luca,")
+                .contains("'WiFi assente in aula'")
+                .contains("Segnalazione non pertinente alla categoria");
+    }
+
+    @Test
+    void notificaRifiutoDefinitivo_erroreInvio_nonPropagaEccezione() {
+        User segnalante = buildUser("Luca", "luca@studenti.unical.it", Ruolo.STUDENTE);
+        Ticket ticket = buildTicket(segnalante);
+
+        doThrow(new MailSendException("SMTP non raggiungibile")).when(mailSender).send(any(SimpleMailMessage.class));
+
+        assertThatCode(() -> service.notificaRifiutoDefinitivo(ticket, "Motivazione qualsiasi"))
+                .doesNotThrowAnyException();
+    }
+
     // ─── Gestione errori: nessuna eccezione propagata ────────────────────────────
 
     @Test

@@ -65,12 +65,19 @@ public interface TicketService {
     TicketResponse aggiornaStato(UUID id, AggiornamentoStatoRequest request, User tecnico);
 
     /**
-     * Rifiuta un ticket con motivazione obbligatoria e rimuove l'assegnazione al tecnico.
+     * Rifiuta un ticket con motivazione obbligatoria.
+     *
+     * <p>Con {@link it.unical.campusreport.entity.enums.TipoRifiuto#RIASSEGNA} il ticket
+     * viene riassegnato automaticamente a un altro tecnico disponibile e viene restituito
+     * il ticket aggiornato. Con {@link it.unical.campusreport.entity.enums.TipoRifiuto#ELIMINA}
+     * il ticket viene eliminato definitivamente dal sistema e il metodo restituisce
+     * {@code null}.
      *
      * @param id      identificativo del ticket
-     * @param request motivazione del rifiuto
+     * @param request tipo di rifiuto e motivazione
      * @param tecnico tecnico che rifiuta
-     * @return ticket aggiornato con stato RIFIUTATA
+     * @return ticket aggiornato con stato RIFIUTATA, oppure {@code null} se il ticket è
+     *         stato eliminato definitivamente
      */
     TicketResponse rifiutaTicket(UUID id, RifiutoRequest request, User tecnico);
 }
