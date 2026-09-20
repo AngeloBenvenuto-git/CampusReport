@@ -168,7 +168,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         rect.setStyle({ fillOpacity: 0.15, opacity: 0.4 });
       });
 
-      if (backendZona) {
+      if (backendZona && this.ruolo !== 'TECNICO') {
         rect.on('click', () => this.apriModal(backendZona));
       }
     });
@@ -217,6 +217,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ─── Sidebar ────────────────────────────────────────────────────────────
+
+  get ruolo(): string {
+    return this.authService.getRuolo() ?? '';
+  }
 
   get ticketFiltrati(): TicketResponse[] {
     switch (this.tabAttiva) {
