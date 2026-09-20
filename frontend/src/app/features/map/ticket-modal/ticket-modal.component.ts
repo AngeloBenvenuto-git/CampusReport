@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
 import { Categoria, TicketRequest, TicketResponse, ZonaResponse } from '../../../shared/models/ticket.models';
+import { ZONE_MAP_DEFS } from '../zone-map.data';
 
 interface CategoriaOption {
   value: Categoria;
@@ -52,6 +53,7 @@ const CATEGORIE: CategoriaOption[] = [
 export class TicketModalComponent implements OnChanges {
   @Input() zona: ZonaResponse | null = null;
   @Input() zoneOptions: ZonaResponse[] = [];
+  @Input() cuboPreimpostato = '';
   @Output() chiudi = new EventEmitter<void>();
   @Output() ticketCreato = new EventEmitter<TicketResponse>();
 
@@ -77,6 +79,15 @@ export class TicketModalComponent implements OnChanges {
 
   ngOnChanges(): void {
     this.form.patchValue({ zonaId: this.zona?.id ?? null });
+    if (this.cuboPreimpostato) {
+      this.form.patchValue({ cubo: this.cuboPreimpostato });
+    }
+  }
+
+  get cubiDisponibili(): string[] {
+    if (!this.zona) return [];
+    const zonaDef = ZONE_MAP_DEFS.find((z) => z.nome === this.zona?.nome);
+    return zonaDef?.cubi ?? [];
   }
 
   selezionaCategoria(categoria: Categoria): void {

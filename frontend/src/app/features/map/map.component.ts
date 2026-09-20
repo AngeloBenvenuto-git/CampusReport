@@ -8,6 +8,7 @@ import { Stato, TicketResponse, ZonaResponse } from '../../shared/models/ticket.
 import { CATEGORIA_INIZIALE, dataRelativa, STATO_BADGE_CLASS, STATO_COLOR, STATO_LABEL } from '../../shared/utils/ticket-display.util';
 import { MAPPA_UNICAL_HEIGHT, MAPPA_UNICAL_WIDTH, ZONE_MAP_DEFS, ZonaMapDef } from './zone-map.data';
 import { TicketModalComponent } from './ticket-modal/ticket-modal.component';
+import { CuboSelectorComponent } from './cubo-selector/cubo-selector.component';
 
 type Tab = 'tutte' | 'attive' | 'completate';
 
@@ -16,7 +17,7 @@ const STATI_ATTIVI: Stato[] = [Stato.APERTA, Stato.ASSEGNATA, Stato.IN_LAVORAZIO
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, TicketModalComponent],
+  imports: [CommonModule, TicketModalComponent, CuboSelectorComponent],
   templateUrl: './map.component.html',
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -35,6 +36,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   modalAperto = false;
   zonaSelezionata: ZonaResponse | null = null;
+  cuboPreimpostato = '';
+
+  zonaSelectorAperta = false;
+  zonaPerSelezione: ZonaMapDef | null = null;
 
   private map: L.Map | null = null;
   private zoneLayerGroup: L.LayerGroup | null = null;
@@ -169,7 +174,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       if (backendZona && this.ruolo !== 'TECNICO') {
-        rect.on('click', () => this.apriModal(backendZona));
+        rect.on('click', () => {
+          this.zonaPerSelezione = def;
+          this.zonaSelectorAperta = true;
+        });
       }
     });
   }
@@ -263,6 +271,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   chiudiModal(): void {
     this.modalAperto = false;
     this.zonaSelezionata = null;
+    this.cuboPreimpostato = '';
+  }
+
+  onCuboSelezionato(cubo: string): void {
+    this.zonaSelectorAperta = false;
+    const zonaResponse = this.zoneBackend.find((z) => z.nome === this.zonaPerSelezione?.nome) ?? null;
+    this.cuboPreimpostato = cubo;
+    this.apriModal(zonaResponse);
+  }
+
+  onAnnullaSelezione(): void {
+    this.zonaSelectorAperta = false;
+    this.zonaPerSelezione = null;
   }
 
   onTicketCreato(ticket: TicketResponse): void {

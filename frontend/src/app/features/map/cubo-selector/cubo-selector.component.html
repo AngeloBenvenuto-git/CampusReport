@@ -1,0 +1,51 @@
+<div
+  style="position: fixed; inset: 0; z-index: 9999;
+         background: rgba(0,0,0,0.5);
+         backdrop-filter: blur(4px);
+         display: flex; align-items: center;
+         justify-content: center; padding: 1rem;"
+  (click)="onClose()"
+>
+  <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+      <div class="flex items-center gap-2">
+        <span class="h-2.5 w-2.5 rounded-full" [style.background]="zona?.colore"></span>
+        <div>
+          <h2 class="font-semibold text-gray-900">Seleziona il cubo</h2>
+          <p class="text-xs text-gray-400">{{ zona?.nome }}</p>
+        </div>
+      </div>
+      <button type="button" class="text-gray-400 transition hover:text-gray-600" (click)="onClose()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5">
+      <p class="mb-4 text-sm text-gray-500">Clicca sul cubo dove si trova il problema</p>
+
+      <div class="grid grid-cols-4 gap-2">
+        <div
+          *ngFor="let cubo of zona?.cubi"
+          (click)="onSeleziona(cubo)"
+          class="cursor-pointer rounded-lg border border-gray-200 p-3 text-center text-sm font-medium text-gray-700 transition-all hover:border-[#1F4E79] hover:bg-blue-50 hover:text-[#1F4E79]"
+        >
+          {{ cubo }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t border-gray-100 bg-gray-50 px-6 py-4">
+      <p class="text-xs text-gray-500">
+        Non trovi il tuo cubo?
+        <button type="button" class="font-medium" style="color: #1F4E79" (click)="onSalta()">
+          Salta questo passaggio
+        </button>
+      </p>
+    </div>
+  </div>
+</div>

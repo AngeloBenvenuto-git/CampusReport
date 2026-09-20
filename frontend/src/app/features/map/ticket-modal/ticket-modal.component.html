@@ -1,5 +1,5 @@
 <div
-  style="position: fixed; inset: 0; z-index: 9999;
+  style="position: fixed; inset: 0; z-index: 9998;
          background: rgba(0,0,0,0.5);
          backdrop-filter: blur(4px);
          display: flex; align-items: center;
@@ -38,9 +38,18 @@
 
         <div>
           <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cubo (opzionale)</label>
+          <select
+            formControlName="cubo"
+            *ngIf="cubiDisponibili.length > 0"
+            class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+          >
+            <option value="">-- Seleziona cubo --</option>
+            <option *ngFor="let c of cubiDisponibili" [value]="c">{{ c }}</option>
+          </select>
           <input
             type="text"
             formControlName="cubo"
+            *ngIf="cubiDisponibili.length === 0"
             placeholder="es. 15B, 22C..."
             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
           />

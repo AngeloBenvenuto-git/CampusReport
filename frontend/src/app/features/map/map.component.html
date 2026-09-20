@@ -116,9 +116,17 @@
   {{ errore }}
 </div>
 
+<app-cubo-selector
+  *ngIf="zonaSelectorAperta && zonaPerSelezione"
+  [zona]="zonaPerSelezione"
+  (cuboSelezionato)="onCuboSelezionato($event)"
+  (annulla)="onAnnullaSelezione()"
+></app-cubo-selector>
+
 <app-ticket-modal
   *ngIf="modalAperto"
   [zona]="zonaSelezionata"
+  [cuboPreimpostato]="cuboPreimpostato"
   [zoneOptions]="zoneBackend"
   (chiudi)="chiudiModal()"
   (ticketCreato)="onTicketCreato($event)"
