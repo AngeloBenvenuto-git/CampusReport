@@ -9,6 +9,7 @@ import { CATEGORIA_INIZIALE, dataRelativa, STATO_BADGE_CLASS, STATO_COLOR, STATO
 import { MAPPA_UNICAL_HEIGHT, MAPPA_UNICAL_WIDTH, ZONE_MAP_DEFS, ZonaMapDef } from './zone-map.data';
 import { TicketModalComponent } from './ticket-modal/ticket-modal.component';
 import { CuboSelectorComponent } from './cubo-selector/cubo-selector.component';
+import { ZonaSelectorComponent } from './zona-selector/zona-selector.component';
 
 type Tab = 'tutte' | 'attive' | 'completate';
 
@@ -17,7 +18,7 @@ const STATI_ATTIVI: Stato[] = [Stato.APERTA, Stato.ASSEGNATA, Stato.IN_LAVORAZIO
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, TicketModalComponent, CuboSelectorComponent],
+  imports: [CommonModule, TicketModalComponent, CuboSelectorComponent, ZonaSelectorComponent],
   templateUrl: './map.component.html',
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -40,6 +41,8 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
 
   zonaSelectorAperta = false;
   zonaPerSelezione: ZonaMapDef | null = null;
+
+  zonaSelectorNuovaAperto = false;
 
   private map: L.Map | null = null;
   private zoneLayerGroup: L.LayerGroup | null = null;
@@ -264,6 +267,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   // ─── Modal ──────────────────────────────────────────────────────────────
 
   apriModal(zona: ZonaResponse | null): void {
+    if (!zona) {
+      this.zonaSelectorNuovaAperto = true;
+      return;
+    }
     this.zonaSelezionata = zona;
     this.modalAperto = true;
   }
@@ -278,12 +285,23 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this.zonaSelectorAperta = false;
     const zonaResponse = this.zoneBackend.find((z) => z.nome === this.zonaPerSelezione?.nome) ?? null;
     this.cuboPreimpostato = cubo;
-    this.apriModal(zonaResponse);
+    this.zonaSelezionata = zonaResponse;
+    this.modalAperto = true;
   }
 
   onAnnullaSelezione(): void {
     this.zonaSelectorAperta = false;
     this.zonaPerSelezione = null;
+  }
+
+  onZonaSelezionataDaNuova(zonaDef: ZonaMapDef): void {
+    this.zonaSelectorNuovaAperto = false;
+    this.zonaPerSelezione = zonaDef;
+    this.zonaSelectorAperta = true;
+  }
+
+  onAnnullaZonaSelezione(): void {
+    this.zonaSelectorNuovaAperto = false;
   }
 
   onTicketCreato(ticket: TicketResponse): void {

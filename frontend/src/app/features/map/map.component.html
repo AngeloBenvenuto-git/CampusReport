@@ -116,6 +116,12 @@
   {{ errore }}
 </div>
 
+<app-zona-selector
+  *ngIf="zonaSelectorNuovaAperto"
+  (zonaSelezionata)="onZonaSelezionataDaNuova($event)"
+  (annulla)="onAnnullaZonaSelezione()"
+></app-zona-selector>
+
 <app-cubo-selector
   *ngIf="zonaSelectorAperta && zonaPerSelezione"
   [zona]="zonaPerSelezione"
