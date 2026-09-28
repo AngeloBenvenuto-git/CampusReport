@@ -1,5 +1,7 @@
 package it.unical.campusreport.service;
 
+import it.unical.campusreport.dto.ModificaTicketRequest;
+import it.unical.campusreport.dto.NlpResponse;
 import it.unical.campusreport.dto.RifiutoRequest;
 import it.unical.campusreport.dto.TicketResponse;
 import it.unical.campusreport.entity.Allegato;
@@ -12,6 +14,7 @@ import it.unical.campusreport.entity.enums.Priorita;
 import it.unical.campusreport.entity.enums.Ruolo;
 import it.unical.campusreport.entity.enums.Stato;
 import it.unical.campusreport.entity.enums.TipoRifiuto;
+import it.unical.campusreport.exception.TicketNonModificabileException;
 import it.unical.campusreport.exception.UnauthorizedTicketAccessException;
 import it.unical.campusreport.repository.AllegatoRepository;
 import it.unical.campusreport.repository.CambioStatoRepository;
@@ -185,5 +188,127 @@ class TicketServiceImplTest {
 
         assertThatThrownBy(() -> service.rifiutaTicket(ticket.getId(), request, tecnico))
                 .isInstanceOf(UnauthorizedTicketAccessException.class);
+    }
+
+    // ─── modificaTicket ─────────────────────────────────────────────────────────
+
+    private ModificaTicketRequest buildModificaRequest(String titolo, String descrizione,
+                                                        Categoria categoria, String cubo, String piano) {
+        ModificaTicketRequest request = new ModificaTicketRequest();
+        request.setTitolo(titolo);
+        request.setDescrizione(descrizione);
+        request.setCategoria(categoria);
+        request.setCubo(cubo);
+        request.setPiano(piano);
+        return request;
+    }
+
+    @Test
+    void modificaTicket_statoAperta_aggiornaCampiERegistraCambioStatoConStessoStato() {
+        User segnalante = buildUser("Luca", Ruolo.STUDENTE);
+        Ticket ticket = buildTicket(segnalante, null);
+        ticket.setStato(Stato.APERTA);
+
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket)).thenReturn(List.of());
+
+        ModificaTicketRequest request = buildModificaRequest(
+                "WiFi assente in aula", "Descrizione aggiornata", Categoria.WIFI, "12A", "1° Piano");
+
+        TicketResponse response = service.modificaTicket(ticket.getId(), request, segnalante);
+
+        assertThat(response).isNotNull();
+        assertThat(ticket.getTitolo()).isEqualTo("WiFi assente in aula");
+        assertThat(ticket.getDescrizione()).isEqualTo("Descrizione aggiornata");
+        assertThat(ticket.getCubo()).isEqualTo("12A");
+        assertThat(ticket.getPiano()).isEqualTo("1° Piano");
+        verify(emailService, never())
+                .notificaTecnicoModificaSegnalazione(any(), any(), any(), any(), any(), any());
+        verify(nlpClient, never()).classifyText(any());
+
+        ArgumentCaptor<CambioStato> captor = ArgumentCaptor.forClass(CambioStato.class);
+        verify(cambioStatoRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatoPrecedente()).isEqualTo(Stato.APERTA);
+        assertThat(captor.getValue().getStatoNuovo()).isEqualTo(Stato.APERTA);
+        assertThat(captor.getValue().getNota()).isEqualTo("Segnalazione modificata dall'utente");
+    }
+
+    @Test
+    void modificaTicket_statoAssegnataConCambioCategoria_ricalcolaConfidenzaEInvioEmailAlTecnico() {
+        User segnalante = buildUser("Luca", Ruolo.STUDENTE);
+        User tecnico = buildUser("Mario", Ruolo.TECNICO);
+        Ticket ticket = buildTicket(segnalante, tecnico);
+        ticket.setStato(Stato.ASSEGNATA);
+        ticket.setCategoria(Categoria.WIFI);
+
+        NlpResponse nlpResponse = new NlpResponse();
+        nlpResponse.setCategoria("ELETTRICO");
+        nlpResponse.setConfidenza(0.92f);
+
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(nlpClient.classifyText(any())).thenReturn(nlpResponse);
+        when(cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket)).thenReturn(List.of());
+
+        ModificaTicketRequest request = buildModificaRequest(
+                "Presa rotta", "In realtà è un problema elettrico", Categoria.ELETTRICO, null, null);
+
+        service.modificaTicket(ticket.getId(), request, segnalante);
+
+        assertThat(ticket.getCategoria()).isEqualTo(Categoria.ELETTRICO);
+        assertThat(ticket.getCategoriaConfidenza()).isEqualTo(0.92f);
+        verify(nlpClient).classifyText("In realtà è un problema elettrico");
+        // Il tecnico assegnato non viene ricalcolato
+        assertThat(ticket.getTecnico()).isEqualTo(tecnico);
+        verify(assegnazioneService, never()).assegna(any());
+        verify(emailService).notificaTecnicoModificaSegnalazione(
+                ticket, "WiFi assente", "Il WiFi non funziona", Categoria.WIFI, null, null);
+    }
+
+    @Test
+    void modificaTicket_utenteNonSegnalante_lanciaUnauthorized() {
+        User segnalante = buildUser("Luca", Ruolo.STUDENTE);
+        User altroUtente = buildUser("Anna", Ruolo.STUDENTE);
+        Ticket ticket = buildTicket(segnalante, null);
+        ticket.setStato(Stato.APERTA);
+
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+
+        ModificaTicketRequest request = buildModificaRequest("Titolo", "Descrizione", Categoria.WIFI, null, null);
+
+        assertThatThrownBy(() -> service.modificaTicket(ticket.getId(), request, altroUtente))
+                .isInstanceOf(UnauthorizedTicketAccessException.class);
+    }
+
+    @Test
+    void modificaTicket_statoInLavorazione_lanciaTicketNonModificabile() {
+        User segnalante = buildUser("Luca", Ruolo.STUDENTE);
+        User tecnico = buildUser("Mario", Ruolo.TECNICO);
+        Ticket ticket = buildTicket(segnalante, tecnico);
+        ticket.setStato(Stato.IN_LAVORAZIONE);
+
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+
+        ModificaTicketRequest request = buildModificaRequest("Titolo", "Descrizione", Categoria.WIFI, null, null);
+
+        assertThatThrownBy(() -> service.modificaTicket(ticket.getId(), request, segnalante))
+                .isInstanceOf(TicketNonModificabileException.class);
+        verify(ticketRepository, never()).save(any());
+    }
+
+    @Test
+    void modificaTicket_statoCompletata_lanciaTicketNonModificabile() {
+        User segnalante = buildUser("Luca", Ruolo.STUDENTE);
+        User tecnico = buildUser("Mario", Ruolo.TECNICO);
+        Ticket ticket = buildTicket(segnalante, tecnico);
+        ticket.setStato(Stato.COMPLETATA);
+
+        when(ticketRepository.findById(ticket.getId())).thenReturn(Optional.of(ticket));
+
+        ModificaTicketRequest request = buildModificaRequest("Titolo", "Descrizione", Categoria.WIFI, null, null);
+
+        assertThatThrownBy(() -> service.modificaTicket(ticket.getId(), request, segnalante))
+                .isInstanceOf(TicketNonModificabileException.class);
     }
 }

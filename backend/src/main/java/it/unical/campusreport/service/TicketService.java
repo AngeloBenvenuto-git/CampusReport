@@ -1,6 +1,7 @@
 package it.unical.campusreport.service;
 
 import it.unical.campusreport.dto.AggiornamentoStatoRequest;
+import it.unical.campusreport.dto.ModificaTicketRequest;
 import it.unical.campusreport.dto.RifiutoRequest;
 import it.unical.campusreport.dto.TicketRequest;
 import it.unical.campusreport.dto.TicketResponse;
@@ -80,4 +81,22 @@ public interface TicketService {
      *         stato eliminato definitivamente
      */
     TicketResponse rifiutaTicket(UUID id, RifiutoRequest request, User tecnico);
+
+    /**
+     * Modifica una segnalazione esistente. Consentito solo al segnalante e solo
+     * quando lo stato del ticket è APERTA o ASSEGNATA (finché il tecnico non ha
+     * preso in carico la segnalazione).
+     *
+     * <p>Se il ticket è ASSEGNATA, viene inviata una email di notifica al tecnico
+     * assegnato con il confronto tra i valori precedenti e quelli aggiornati.
+     *
+     * @param id      identificativo del ticket
+     * @param request nuovi dati della segnalazione
+     * @param utente  utente che richiede la modifica (deve essere il segnalante)
+     * @return ticket aggiornato
+     * @throws it.unical.campusreport.exception.TicketNotFoundException           se il ticket non esiste
+     * @throws it.unical.campusreport.exception.UnauthorizedTicketAccessException  se l'utente non è il segnalante
+     * @throws it.unical.campusreport.exception.TicketNonModificabileException     se lo stato non consente la modifica
+     */
+    TicketResponse modificaTicket(UUID id, ModificaTicketRequest request, User utente);
 }

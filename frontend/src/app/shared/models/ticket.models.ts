@@ -78,3 +78,11 @@ export interface TicketRequest {
   descrizione: string;
   categoria: Categoria;
 }
+
+export interface ModificaTicketRequest {
+  titolo: string;
+  descrizione: string;
+  categoria: Categoria;
+  cubo?: string;
+  piano?: string;
+}

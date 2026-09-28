@@ -68,6 +68,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/tickets/assegnati").hasAnyRole("TECNICO", "ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/tickets/*/stato").hasAnyRole("TECNICO", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/tickets/*/rifiuta").hasRole("TECNICO")
+                .requestMatchers(HttpMethod.PUT, "/api/tickets/*").hasAnyRole("STUDENTE", "DOCENTE")
                 // Ticket STUDENTE, DOCENTE o ADMIN
                 .requestMatchers(HttpMethod.POST, "/api/tickets").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/tickets/miei").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")

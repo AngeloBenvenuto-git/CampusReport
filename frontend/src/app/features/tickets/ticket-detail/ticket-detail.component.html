@@ -18,9 +18,28 @@
 
       <div class="mt-2 flex items-start justify-between">
         <h1 class="text-2xl font-bold text-gray-900">{{ t.titolo }}</h1>
-        <span class="rounded-full px-3 py-1.5 text-sm font-medium" [ngClass]="STATO_BADGE_CLASS[t.stato]">
-          {{ STATO_LABEL[t.stato] }}
-        </span>
+        <div class="flex flex-col items-end gap-1.5">
+          <div class="flex items-center gap-2">
+            <button
+              *ngIf="puoModificare"
+              (click)="apriModifica()"
+              class="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium
+                     text-gray-700 transition-all hover:bg-gray-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" />
+              </svg>
+              Modifica
+            </button>
+            <span class="rounded-full px-3 py-1.5 text-sm font-medium" [ngClass]="STATO_BADGE_CLASS[t.stato]">
+              {{ STATO_LABEL[t.stato] }}
+            </span>
+          </div>
+          <p *ngIf="!puoModificare && t.stato === Stato.IN_LAVORAZIONE" class="text-xs text-gray-400">
+            Non modificabile — il tecnico ha preso in carico
+          </p>
+        </div>
       </div>
 
       <div class="mt-6 grid grid-cols-3 gap-6">
@@ -96,6 +115,118 @@
           </div>
 
           <p *ngIf="t.storico.length === 0" class="text-sm text-gray-400">Nessun evento registrato.</p>
+        </div>
+      </div>
+
+      <!-- Modal di modifica -->
+      <div
+        *ngIf="modalModificaAperto"
+        style="position: fixed; inset: 0; z-index: 9999;
+               background: rgba(0,0,0,0.5);
+               backdrop-filter: blur(4px);
+               display: flex; align-items: center;
+               justify-content: center; padding: 1rem;"
+        (click)="chiudiModifica()"
+      >
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="font-semibold text-gray-900">Modifica segnalazione</h2>
+            <button type="button" class="text-gray-400 transition hover:text-gray-600" (click)="chiudiModifica()">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Body -->
+          <form [formGroup]="formModifica" (ngSubmit)="onSalvaModifica()">
+            <div class="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
+              <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                ℹ️ Puoi modificare la segnalazione finché il tecnico non la prende in carico. Se hai un
+                tecnico assegnato, riceverà una email con le modifiche.
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Titolo *</label>
+                <input
+                  type="text"
+                  formControlName="titolo"
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Descrizione *</label>
+                <textarea
+                  formControlName="descrizione"
+                  rows="3"
+                  class="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                ></textarea>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Categoria *</label>
+                <select
+                  formControlName="categoria"
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                >
+                  <option *ngFor="let c of categorie" [ngValue]="c.value">{{ c.label }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cubo</label>
+                <select
+                  formControlName="cubo"
+                  *ngIf="cubiDisponibili.length > 0"
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                >
+                  <option value="">-- Seleziona cubo --</option>
+                  <option *ngFor="let c of cubiDisponibili" [value]="c">{{ c }}</option>
+                </select>
+                <input
+                  type="text"
+                  formControlName="cubo"
+                  *ngIf="cubiDisponibili.length === 0"
+                  placeholder="es. 15B, 22C..."
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Piano</label>
+                <select
+                  formControlName="piano"
+                  class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+                >
+                  <option value="">Seleziona piano (opzionale)</option>
+                  <option *ngFor="let p of piani" [value]="p">{{ p }}</option>
+                </select>
+              </div>
+
+              <p *ngIf="erroreModifica" class="text-sm text-red-600">{{ erroreModifica }}</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+              <button
+                type="button"
+                (click)="chiudiModifica()"
+                class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+              >
+                Annulla
+              </button>
+              <button
+                type="submit"
+                [disabled]="formModifica.invalid || loadingModifica"
+                class="rounded-lg px-4 py-2 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+                style="background: #1F4E79"
+              >
+                {{ loadingModifica ? 'Salvataggio...' : 'Salva modifiche' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </ng-container>

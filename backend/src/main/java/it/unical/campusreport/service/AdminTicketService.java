@@ -38,9 +38,9 @@ public interface AdminTicketService {
     TicketResponse assegnaManualmente(UUID ticketId, AssegnazioneManualRequest request, User admin);
 
     /**
-     * Esporta tutti i ticket del sistema in formato CSV.
+     * Esporta tutti i ticket del sistema in formato Excel (.xlsx).
      *
-     * @return contenuto del file CSV codificato UTF-8
+     * @return contenuto del file Excel
      */
-    byte[] exportCsv();
+    byte[] exportExcel();
 }

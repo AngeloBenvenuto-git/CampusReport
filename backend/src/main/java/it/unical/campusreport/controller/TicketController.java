@@ -1,6 +1,7 @@
 package it.unical.campusreport.controller;
 
 import it.unical.campusreport.dto.AggiornamentoStatoRequest;
+import it.unical.campusreport.dto.ModificaTicketRequest;
 import it.unical.campusreport.dto.RifiutoRequest;
 import it.unical.campusreport.dto.TicketRequest;
 import it.unical.campusreport.dto.TicketResponse;
@@ -130,6 +131,23 @@ public class TicketController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Modifica una segnalazione esistente. Accessibile a STUDENTE e DOCENTE,
+     * solo per le proprie segnalazioni con stato APERTA o ASSEGNATA.
+     *
+     * @param id      identificativo del ticket
+     * @param request nuovi dati della segnalazione
+     * @return ticket aggiornato
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('STUDENTE', 'DOCENTE')")
+    public ResponseEntity<TicketResponse> modificaTicket(@PathVariable UUID id,
+                                                          @Valid @RequestBody ModificaTicketRequest request) {
+        User utente = getCurrentUser();
+        log.info("Utente {} modifica ticket {}", utente.getEmail(), id);
+        return ResponseEntity.ok(ticketService.modificaTicket(id, request, utente));
     }
 
     private User getCurrentUser() {

@@ -2,6 +2,7 @@ package it.unical.campusreport.service;
 
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
+import it.unical.campusreport.entity.enums.Categoria;
 import it.unical.campusreport.entity.enums.Stato;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -207,7 +208,79 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void notificaTecnicoModificaSegnalazione(Ticket ticket,
+                                                     String vecchioTitolo,
+                                                     String vecchiaDescrizione,
+                                                     Categoria vecchiaCategoria,
+                                                     String vecchioCubo,
+                                                     String vecchioPiano) {
+        try {
+            User tecnico = ticket.getTecnico();
+            if (tecnico == null) {
+                return;
+            }
+
+            String corpo = """
+                    Gentile %s,
+
+                    La segnalazione a te assegnata è stata modificata
+                    dall'utente.
+
+                    ═══════════════════════════════
+                    DETTAGLI AGGIORNATI:
+                    ═══════════════════════════════
+                    Titolo: %s
+                    Descrizione: %s
+                    Categoria: %s
+                    Cubo: %s
+                    Piano: %s
+
+                    ═══════════════════════════════
+                    VALORI PRECEDENTI:
+                    ═══════════════════════════════
+                    Titolo: %s
+                    Descrizione: %s
+                    Categoria: %s
+                    Cubo: %s
+                    Piano: %s
+
+                    Accedi al sistema per visualizzare la segnalazione
+                    aggiornata.
+
+                    CampusReport - Sistema segnalazioni Unical"""
+                    .formatted(
+                            tecnico.getNome(),
+                            ticket.getTitolo(),
+                            ticket.getDescrizione(),
+                            ticket.getCategoria(),
+                            valoreOVuoto(ticket.getCubo()),
+                            valoreOVuoto(ticket.getPiano()),
+                            vecchioTitolo,
+                            vecchiaDescrizione,
+                            vecchiaCategoria,
+                            valoreOVuoto(vecchioCubo),
+                            valoreOVuoto(vecchioPiano));
+
+            invia(tecnico.getEmail(),
+                    "[CampusReport] Segnalazione modificata - " + ticket.getTitolo(),
+                    corpo);
+
+            log.info("Email di modifica segnalazione inviata a {} per ticket {}",
+                    tecnico.getEmail(), ticket.getId());
+        } catch (Exception e) {
+            log.error("Errore nell'invio dell'email di modifica segnalazione per ticket {}", ticket.getId(), e);
+        }
+    }
+
     // ─── Helper privati ─────────────────────────────────────────────────────────
+
+    private String valoreOVuoto(String valore) {
+        return valore != null && !valore.isBlank() ? valore : "-";
+    }
 
     private void invia(String to, String oggetto, String corpo) {
         SimpleMailMessage message = new SimpleMailMessage();

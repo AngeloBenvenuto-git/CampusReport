@@ -2,6 +2,7 @@ package it.unical.campusreport.service;
 
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
+import it.unical.campusreport.entity.enums.Categoria;
 import it.unical.campusreport.entity.enums.Stato;
 
 /**
@@ -55,4 +56,23 @@ public interface EmailService {
      * @param motivazione il motivo del rifiuto fornito dal tecnico
      */
     void notificaRifiutoDefinitivo(Ticket ticket, String motivazione);
+
+    /**
+     * Notifica il tecnico assegnato che il segnalante ha modificato i dettagli
+     * della segnalazione a lui assegnata, riportando i valori precedenti e
+     * quelli aggiornati.
+     *
+     * @param ticket             il ticket modificato, già aggiornato con i nuovi valori
+     * @param vecchioTitolo      il titolo prima della modifica
+     * @param vecchiaDescrizione la descrizione prima della modifica
+     * @param vecchiaCategoria   la categoria prima della modifica
+     * @param vecchioCubo        il cubo prima della modifica
+     * @param vecchioPiano       il piano prima della modifica
+     */
+    void notificaTecnicoModificaSegnalazione(Ticket ticket,
+                                              String vecchioTitolo,
+                                              String vecchiaDescrizione,
+                                              Categoria vecchiaCategoria,
+                                              String vecchioCubo,
+                                              String vecchioPiano);
 }

@@ -81,18 +81,18 @@ public class AdminController {
     }
 
     /**
-     * Esporta tutti i ticket del sistema in formato CSV.
+     * Esporta tutti i ticket del sistema in formato Excel (.xlsx).
      *
-     * @return file CSV allegato
+     * @return file Excel allegato
      */
     @GetMapping("/export/csv")
-    public ResponseEntity<byte[]> exportCsv() {
-        log.info("Admin: esportazione CSV ticket");
-        byte[] csv = adminTicketService.exportCsv();
+    public ResponseEntity<byte[]> exportExcel() {
+        log.info("Admin: esportazione Excel ticket");
+        byte[] excel = adminTicketService.exportExcel();
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/csv"))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tickets.csv\"")
-                .body(csv);
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"tickets.xlsx\"")
+                .body(excel);
     }
 
     // ─── Statistiche ────────────────────────────────────────────────────────────

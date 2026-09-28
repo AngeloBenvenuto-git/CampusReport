@@ -12,6 +12,7 @@ import it.unical.campusreport.entity.enums.Ruolo;
 import it.unical.campusreport.entity.enums.Stato;
 import it.unical.campusreport.entity.enums.TipoRifiuto;
 import it.unical.campusreport.exception.InvalidStatoTransitionException;
+import it.unical.campusreport.exception.TicketNonModificabileException;
 import it.unical.campusreport.exception.TicketNotFoundException;
 import it.unical.campusreport.exception.UnauthorizedTicketAccessException;
 import it.unical.campusreport.exception.ZonaNotFoundException;
@@ -306,6 +307,75 @@ public class TicketServiceImpl implements TicketService {
                         allegato.getFilename(), ticket.getId(), e);
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Verifica che l'utente sia il segnalante e che lo stato del ticket sia
+     * ancora APERTA o ASSEGNATA, poi aggiorna titolo, descrizione, categoria,
+     * cubo e piano. Se la categoria cambia e il ticket è già ASSEGNATA, la
+     * confidenza NLP viene ricalcolata senza però riassegnare il tecnico.
+     * Registra un {@link CambioStato} con stato precedente e nuovo identici
+     * (serve solo a tracciare che l'utente ha modificato la segnalazione) e,
+     * se il ticket ha un tecnico assegnato, gli invia una email di notifica.
+     */
+    @Override
+    @Transactional
+    public TicketResponse modificaTicket(UUID id, ModificaTicketRequest request, User utente) {
+        log.info("Utente {} modifica ticket {}", utente.getEmail(), id);
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException("Ticket non trovato con id: " + id));
+
+        if (!ticket.getSegnalante().getId().equals(utente.getId())) {
+            throw new UnauthorizedTicketAccessException("Accesso non autorizzato al ticket " + id);
+        }
+
+        if (ticket.getStato() != Stato.APERTA && ticket.getStato() != Stato.ASSEGNATA) {
+            throw new TicketNonModificabileException(
+                    "La segnalazione non può essere modificata perché è già stata presa in carico dal tecnico");
+        }
+
+        String vecchioTitolo = ticket.getTitolo();
+        String vecchiaDescrizione = ticket.getDescrizione();
+        Categoria vecchiaCategoria = ticket.getCategoria();
+        String vecchioCubo = ticket.getCubo();
+        String vecchioPiano = ticket.getPiano();
+
+        ticket.setTitolo(request.getTitolo());
+        ticket.setDescrizione(request.getDescrizione());
+        ticket.setCubo(request.getCubo());
+        ticket.setPiano(request.getPiano());
+
+        if (request.getCategoria() != vecchiaCategoria) {
+            ticket.setCategoria(request.getCategoria());
+            if (ticket.getStato() == Stato.ASSEGNATA) {
+                NlpResponse nlpResponse = nlpClient.classifyText(request.getDescrizione());
+                ticket.setCategoriaConfidenza(nlpResponse.getConfidenza());
+            }
+            // Il tecnico assegnato NON viene ricalcolato: rimane quello attuale.
+        }
+
+        ticket = ticketRepository.save(ticket);
+
+        cambioStatoRepository.save(CambioStato.builder()
+                .ticket(ticket)
+                .statoPrecedente(ticket.getStato())
+                .statoNuovo(ticket.getStato())
+                .utente(utente)
+                .nota("Segnalazione modificata dall'utente")
+                .build());
+
+        if (ticket.getTecnico() != null && ticket.getStato() == Stato.ASSEGNATA) {
+            emailService.notificaTecnicoModificaSegnalazione(
+                    ticket, vecchioTitolo, vecchiaDescrizione, vecchiaCategoria, vecchioCubo, vecchioPiano);
+        }
+
+        log.info("Ticket {} modificato da {}", id, utente.getEmail());
+
+        List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
+        return toTicketResponse(ticket, storico);
     }
 
     // ─── Mapping helpers ────────────────────────────────────────────────────────

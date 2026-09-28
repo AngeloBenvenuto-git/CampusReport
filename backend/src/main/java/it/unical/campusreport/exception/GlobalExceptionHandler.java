@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -78,6 +79,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestisce il tentativo di modificare un ticket già preso in carico dal tecnico.
+     */
+    @ExceptionHandler(TicketNonModificabileException.class)
+    public ResponseEntity<Map<String, Object>> handleTicketNonModificabile(TicketNonModificabileException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Segnalazione non modificabile", ex.getMessage());
+    }
+
+    /**
      * Gestisce una transizione di stato non consentita dal workflow.
      */
     @ExceptionHandler(InvalidStatoTransitionException.class)
@@ -137,6 +146,17 @@ public class GlobalExceptionHandler {
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Errore di validazione", errors);
+    }
+
+    /**
+     * Gestisce il diniego di accesso per ruolo non autorizzato sollevato dai controlli
+     * {@code @PreAuthorize} a livello di metodo. Senza questo handler esplicito, l'eccezione
+     * viene intercettata dal fallback generico sottostante e restituita come 500 invece del
+     * 403 previsto, mascherando il vero errore di autorizzazione.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Accesso negato", "Ruolo non autorizzato per questa risorsa");
     }
 
     /**

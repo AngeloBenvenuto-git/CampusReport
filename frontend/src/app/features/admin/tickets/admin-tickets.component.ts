@@ -115,7 +115,7 @@ export class AdminTicketsComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'tickets.csv';
+        link.download = 'tickets.xlsx';
         link.click();
         window.URL.revokeObjectURL(url);
       },

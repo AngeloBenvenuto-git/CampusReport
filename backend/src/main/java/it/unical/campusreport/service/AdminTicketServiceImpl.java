@@ -17,6 +17,15 @@ import it.unical.campusreport.repository.TicketRepository;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +34,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +50,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AdminTicketServiceImpl implements AdminTicketService {
 
-    private static final DateTimeFormatter CSV_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter EXPORT_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final String[] EXPORT_HEADERS = {
+            "ID", "Titolo", "Categoria", "Stato", "Priorità", "Zona", "Cubo", "Piano",
+            "Segnalante", "Tecnico", "Data Creazione", "Data Aggiornamento"
+    };
 
     private final TicketRepository ticketRepository;
     private final TecnicoRepository tecnicoRepository;
@@ -119,31 +134,66 @@ public class AdminTicketServiceImpl implements AdminTicketService {
      */
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportCsv() {
-        log.info("Esportazione CSV di tutti i ticket");
+    public byte[] exportExcel() {
+        log.info("Esportazione Excel di tutti i ticket");
 
         List<Ticket> tickets = ticketRepository.findAll();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID,Titolo,Categoria,Stato,Priorita,Zona,Cubo,Piano,Segnalante,Tecnico,DataCreazione,DataAggiornamento\n");
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            XSSFSheet sheet = workbook.createSheet("Segnalazioni");
+            CellStyle headerStyle = creaStileIntestazione(workbook);
 
-        for (Ticket t : tickets) {
-            sb.append(csv(t.getId().toString())).append(',')
-              .append(csv(t.getTitolo())).append(',')
-              .append(csv(t.getCategoria() != null ? t.getCategoria().name() : "")).append(',')
-              .append(csv(t.getStato() != null ? t.getStato().name() : "")).append(',')
-              .append(csv(t.getPriorita() != null ? t.getPriorita().name() : "")).append(',')
-              .append(csv(t.getZona() != null ? t.getZona().getNome() : "")).append(',')
-              .append(csv(t.getCubo())).append(',')
-              .append(csv(t.getPiano())).append(',')
-              .append(csv(t.getSegnalante() != null ? t.getSegnalante().getEmail() : "")).append(',')
-              .append(csv(t.getTecnico() != null ? t.getTecnico().getEmail() : "")).append(',')
-              .append(csv(t.getCreatedAt() != null ? t.getCreatedAt().format(CSV_DATE_FORMAT) : "")).append(',')
-              .append(csv(t.getUpdatedAt() != null ? t.getUpdatedAt().format(CSV_DATE_FORMAT) : ""))
-              .append('\n');
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < EXPORT_HEADERS.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(EXPORT_HEADERS[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIndex = 1;
+            for (Ticket t : tickets) {
+                Row row = sheet.createRow(rowIndex++);
+                row.createCell(0).setCellValue(t.getId().toString());
+                row.createCell(1).setCellValue(nvl(t.getTitolo()));
+                row.createCell(2).setCellValue(t.getCategoria() != null ? t.getCategoria().name() : "");
+                row.createCell(3).setCellValue(t.getStato() != null ? t.getStato().name() : "");
+                row.createCell(4).setCellValue(t.getPriorita() != null ? t.getPriorita().name() : "");
+                row.createCell(5).setCellValue(t.getZona() != null ? t.getZona().getNome() : "");
+                row.createCell(6).setCellValue(nvl(t.getCubo()));
+                row.createCell(7).setCellValue(nvl(t.getPiano()));
+                row.createCell(8).setCellValue(t.getSegnalante() != null ? t.getSegnalante().getEmail() : "");
+                row.createCell(9).setCellValue(t.getTecnico() != null ? t.getTecnico().getEmail() : "");
+                row.createCell(10).setCellValue(t.getCreatedAt() != null ? t.getCreatedAt().format(EXPORT_DATE_FORMAT) : "");
+                row.createCell(11).setCellValue(t.getUpdatedAt() != null ? t.getUpdatedAt().format(EXPORT_DATE_FORMAT) : "");
+            }
+
+            for (int i = 0; i < EXPORT_HEADERS.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Errore durante la generazione del file Excel", e);
         }
+    }
 
-        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    private CellStyle creaStileIntestazione(XSSFWorkbook workbook) {
+        XSSFCellStyle style = workbook.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(new byte[]{(byte) 0x1F, (byte) 0x4E, (byte) 0x79}, null));
+        style.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setColor(IndexedColors.WHITE.getIndex());
+        style.setFont(font);
+
+        return style;
+    }
+
+    private String nvl(String value) {
+        return value != null ? value : "";
     }
 
     // ─── Helper privati ─────────────────────────────────────────────────────────
@@ -190,15 +240,6 @@ public class AdminTicketServiceImpl implements AdminTicketService {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
-    }
-
-    private String csv(String value) {
-        if (value == null || value.isEmpty()) return "";
-        String escaped = value.replace("\"", "\"\"");
-        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
-            return "\"" + escaped + "\"";
-        }
-        return escaped;
     }
 
     private TicketResponse toTicketResponse(Ticket ticket, List<CambioStato> storico) {
