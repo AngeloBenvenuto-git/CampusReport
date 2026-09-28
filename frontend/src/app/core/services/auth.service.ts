@@ -2,7 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginRequest, RegisterRequest } from '../../shared/models/auth.models';
+import {
+  AttivaAccountRequest,
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  VerificaTokenResponse,
+} from '../../shared/models/auth.models';
 
 const TOKEN_KEY = 'campusreport_token';
 const USER_KEY = 'campusreport_user';
@@ -25,6 +31,22 @@ export class AuthService {
   register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${this.apiUrl}/register`, request)
+      .pipe(tap((response) => this.salvaSessione(response)));
+  }
+
+  /**
+   * Verifica se un token di attivazione è ancora utilizzabile, prima di mostrare il form.
+   */
+  verificaToken(token: string): Observable<VerificaTokenResponse> {
+    return this.http.get<VerificaTokenResponse>(`${this.apiUrl}/verifica-token`, { params: { token } });
+  }
+
+  /**
+   * Attiva l'account di un tecnico impostando la password e avvia la sessione con il JWT restituito.
+   */
+  attivaAccount(request: AttivaAccountRequest): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/attiva`, request)
       .pipe(tap((response) => this.salvaSessione(response)));
   }
 

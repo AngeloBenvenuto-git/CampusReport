@@ -20,7 +20,8 @@ import java.util.UUID;
 /**
  * Implementazione dell'algoritmo di assegnazione automatica.
  *
- * <p>Formula: {@code score = α·match_specializzazione + β·(1 − carico_attuale)}
+ * <p>Formula: {@code score = α·match_specializzazione + β·(1 − carico_attuale)
+ * + γ·urgenza_normalizzata + δ·vicinanza_zona}
  *
  * <p><b>Gestione concorrenza:</b> {@link #trovaMiglioreTecnico} usa
  * {@code PESSIMISTIC_WRITE} per bloccare le righe dei tecnici candidati
@@ -37,17 +38,20 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
     private final CambioStatoRepository cambioStatoRepository;
     private final AssegnazioneConfig config;
     private final EmailService emailService;
+    private final MatriceAdiacenzaService matriceAdiacenzaService;
 
     public AssegnazioneServiceImpl(TecnicoRepository tecnicoRepository,
                                    TicketRepository ticketRepository,
                                    CambioStatoRepository cambioStatoRepository,
                                    AssegnazioneConfig config,
-                                   EmailService emailService) {
+                                   EmailService emailService,
+                                   MatriceAdiacenzaService matriceAdiacenzaService) {
         this.tecnicoRepository = tecnicoRepository;
         this.ticketRepository = ticketRepository;
         this.cambioStatoRepository = cambioStatoRepository;
         this.config = config;
         this.emailService = emailService;
+        this.matriceAdiacenzaService = matriceAdiacenzaService;
     }
 
     /**
@@ -161,11 +165,21 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
     }
 
     /**
-     * Calcola lo score di un tecnico per un dato ticket.
+     * Calcola lo score di un tecnico per un dato ticket combinando quattro criteri:
+     * <ol>
+     *   <li>specializzazione (α): 1 se la categoria del ticket è tra le specializzazioni</li>
+     *   <li>carico (β): {@code 1 − ticket_aperti / carico_massimo}</li>
+     *   <li>urgenza (γ): urgenza del ticket normalizzata da 1-5 a 0-1 (0.5 se assente)</li>
+     *   <li>vicinanza (δ): vicinanza tra zona del tecnico e zona del ticket
+     *       (vedi {@link MatriceAdiacenzaService#calcolaVicinanza})</li>
+     * </ol>
      *
+     * @param tecnico tecnico candidato
+     * @param ticket  ticket da assegnare
      * @return score in [0, 1], oppure -1.0 se il tecnico non ha la specializzazione
      */
-    private double calcolaScore(Tecnico tecnico, Ticket ticket) {
+    double calcolaScore(Tecnico tecnico, Ticket ticket) {
+        // criterio 1 — specializzazione
         double matchSpec = tecnico.getSpecializzazioni().contains(ticket.getCategoria())
                 ? 1.0 : 0.0;
 
@@ -173,12 +187,26 @@ public class AssegnazioneServiceImpl implements AssegnazioneService {
             return -1.0;
         }
 
+        // criterio 2 — carico
         long ticketAperti = ticketRepository.countByTecnicoAndStatoIn(
                 tecnico, List.of(Stato.ASSEGNATA, Stato.IN_LAVORAZIONE));
 
         double caricoAttuale = Math.min(1.0,
                 (double) ticketAperti / tecnico.getCaricoMassimo());
 
-        return config.getAlpha() * matchSpec + config.getBeta() * (1.0 - caricoAttuale);
+        // criterio 3 — urgenza, normalizzata da scala 1-5 a scala 0-1
+        double urgenzaNorm = ticket.getUrgenza() != null
+                ? (ticket.getUrgenza() - 1.0) / 4.0
+                : 0.5;
+
+        // criterio 4 — vicinanza zona
+        String zonaTicket = ticket.getZona() != null ? ticket.getZona().getNome() : "";
+        String zonaTecnico = tecnico.getZona() != null ? tecnico.getZona() : "";
+        double vicinanza = matriceAdiacenzaService.calcolaVicinanza(zonaTecnico, zonaTicket);
+
+        return config.getAlpha() * matchSpec
+                + config.getBeta() * (1.0 - caricoAttuale)
+                + config.getGamma() * urgenzaNorm
+                + config.getDelta() * vicinanza;
     }
 }

@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
-import { TicketService } from '../../core/services/ticket.service';
+import { TicketService, URGENZA_DEFAULT } from '../../core/services/ticket.service';
 import { Priorita, Stato, TicketResponse, TipoRifiuto } from '../../shared/models/ticket.models';
 import { dataRelativa, STATO_BADGE_CLASS, STATO_LABEL } from '../../shared/utils/ticket-display.util';
 
@@ -67,6 +67,9 @@ export class DashboardComponent implements OnInit {
       .sort((a, b) => {
         if (a.priorita === Priorita.ALTA && b.priorita !== Priorita.ALTA) return -1;
         if (b.priorita === Priorita.ALTA && a.priorita !== Priorita.ALTA) return 1;
+        const urgenzaA = a.urgenza ?? URGENZA_DEFAULT;
+        const urgenzaB = b.urgenza ?? URGENZA_DEFAULT;
+        if (urgenzaA !== urgenzaB) return urgenzaB - urgenzaA;
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       });
   }

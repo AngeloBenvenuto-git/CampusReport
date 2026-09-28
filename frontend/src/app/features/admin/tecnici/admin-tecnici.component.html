@@ -143,11 +143,13 @@
 
         <div>
           <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
-          <input
-            type="text"
+          <select
             formControlName="zona"
             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-          />
+          >
+            <option value="">-- Seleziona zona --</option>
+            <option *ngFor="let z of zone" [value]="z.nome">{{ z.nome }}</option>
+          </select>
         </div>
 
         <div>
@@ -193,7 +195,7 @@
         <button
           type="button"
           (click)="confermaNuovo()"
-          [disabled]="inviandoNuovo"
+          [disabled]="inviandoNuovo || formNuovo.controls.zona.invalid"
           class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style="background: #1F4E79"
         >
@@ -228,11 +230,14 @@
 
         <div>
           <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
-          <input
-            type="text"
+          <select
             formControlName="zona"
             class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-          />
+          >
+            <option value="">-- Seleziona zona --</option>
+            <option *ngIf="zonaAttualeFuoriElenco()" [value]="tecnicoInModifica?.zona">{{ tecnicoInModifica?.zona }}</option>
+            <option *ngFor="let z of zone" [value]="z.nome">{{ z.nome }}</option>
+          </select>
         </div>
 
         <div>
@@ -274,7 +279,7 @@
         <button
           type="button"
           (click)="confermaModifica()"
-          [disabled]="inviandoModifica"
+          [disabled]="inviandoModifica || formModifica.controls.zona.invalid"
           class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style="background: #1F4E79"
         >

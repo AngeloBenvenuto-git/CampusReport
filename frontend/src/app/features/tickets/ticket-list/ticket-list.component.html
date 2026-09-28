@@ -128,6 +128,9 @@
           <p class="font-semibold text-gray-900">{{ t.titolo }}</p>
           <div class="mt-1 flex items-center gap-2">
             <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ CATEGORIA_LABEL[t.categoria] }}</span>
+            <span *ngIf="t.urgenza" class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="URGENZA_BADGE_CLASS[t.urgenza]">
+              {{ URGENZA_BADGE_LABEL[t.urgenza] }}
+            </span>
             <span class="text-gray-300">·</span>
             <span class="text-xs text-gray-400">{{ t.zona.nome }}</span>
             <ng-container *ngIf="t.cubo">

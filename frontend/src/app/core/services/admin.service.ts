@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   AdminStatisticheResponse,
   AdminTicketFiltri,
+  ConfigPesiRequest,
   ConfigPesiResponse,
   CreaTecnicoRequest,
   ModificaTecnicoRequest,
@@ -71,7 +72,10 @@ export class AdminService {
     return this.http.get<ConfigPesiResponse>(`${this.apiUrl}/config/pesi`);
   }
 
-  aggiornaPesi(alpha: number, beta: number): Observable<ConfigPesiResponse> {
-    return this.http.post<ConfigPesiResponse>(`${this.apiUrl}/config/pesi`, { alpha, beta });
+  /**
+   * Aggiorna i pesi α, β, γ, δ dell'algoritmo di assegnazione (la somma deve essere 1.0).
+   */
+  aggiornaPesi(pesi: ConfigPesiRequest): Observable<ConfigPesiResponse> {
+    return this.http.post<ConfigPesiResponse>(`${this.apiUrl}/config/pesi`, pesi);
   }
 }

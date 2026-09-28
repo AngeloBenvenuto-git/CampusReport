@@ -67,6 +67,10 @@ public class Ticket {
     @Column(name = "categoria_confidenza", nullable = true)
     private Float categoriaConfidenza;
 
+    // Nullable: i ticket creati prima dell'introduzione dell'urgenza non hanno il valore (scala 1-5)
+    @Column(name = "urgenza", nullable = true)
+    private Integer urgenza;
+
     @Version
     private Long version;
 

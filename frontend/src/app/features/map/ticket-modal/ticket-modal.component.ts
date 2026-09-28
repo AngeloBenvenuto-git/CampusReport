@@ -1,9 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TicketService } from '../../../core/services/ticket.service';
+import { Subject, Subscription, debounceTime, distinctUntilChanged, filter, map, merge, switchMap } from 'rxjs';
+import { TicketService, URGENZA_DEFAULT } from '../../../core/services/ticket.service';
 import { Categoria, TicketRequest, TicketResponse, ZonaResponse } from '../../../shared/models/ticket.models';
+import { URGENZA_DESCRIZIONE } from '../../../shared/utils/ticket-display.util';
 import { ZONE_MAP_DEFS } from '../zone-map.data';
+
+/** Pausa di digitazione dopo la quale si richiede la stima dell'urgenza. */
+const STIMA_URGENZA_DEBOUNCE_MS = 1000;
+/** Lunghezza minima della descrizione accettata dal microservizio NLP. */
+const STIMA_URGENZA_MIN_CARATTERI = 3;
 
 interface CategoriaOption {
   value: Categoria;
@@ -50,7 +57,7 @@ const CATEGORIE: CategoriaOption[] = [
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './ticket-modal.component.html',
 })
-export class TicketModalComponent implements OnChanges {
+export class TicketModalComponent implements OnInit, OnChanges, OnDestroy {
   @Input() zona: ZonaResponse | null = null;
   @Input() zoneOptions: ZonaResponse[] = [];
   @Input() cuboPreimpostato = '';
@@ -59,6 +66,19 @@ export class TicketModalComponent implements OnChanges {
 
   readonly piani = PIANI;
   readonly categorie = CATEGORIE;
+  readonly livelliUrgenza = [1, 2, 3, 4, 5];
+  readonly URGENZA_DESCRIZIONE = URGENZA_DESCRIZIONE;
+
+  /** Urgenza mostrata nel form (stimata dal sistema o scelta dall'utente). */
+  urgenzaSelezionata = URGENZA_DEFAULT;
+  /** Ultima stima ricevuta dal microservizio NLP, null finché non arriva. */
+  stimaUrgenza: { urgenza: number; confidenza: number } | null = null;
+  /** True se l'utente ha cliccato un livello: le stime successive non sovrascrivono la scelta. */
+  urgenzaModificataManualmente = false;
+  stimaInCorso = false;
+
+  private readonly descrizioneBlur$ = new Subject<void>();
+  private stimaSubscription?: Subscription;
 
   inviando = false;
   errore: string | null = null;
@@ -77,6 +97,38 @@ export class TicketModalComponent implements OnChanges {
     private ticketService: TicketService,
   ) {}
 
+  /**
+   * Avvia la stima automatica dell'urgenza: dopo 1s di pausa nella digitazione
+   * o al blur della descrizione, chiama il microservizio NLP.
+   */
+  ngOnInit(): void {
+    const descrizione = this.form.controls.descrizione;
+    const dopoPausa$ = descrizione.valueChanges.pipe(debounceTime(STIMA_URGENZA_DEBOUNCE_MS));
+    const alBlur$ = this.descrizioneBlur$.pipe(map(() => descrizione.value));
+
+    this.stimaSubscription = merge(dopoPausa$, alBlur$)
+      .pipe(
+        map((testo) => (testo ?? '').trim()),
+        filter((testo) => testo.length >= STIMA_URGENZA_MIN_CARATTERI),
+        distinctUntilChanged(),
+        switchMap((testo) => {
+          this.stimaInCorso = true;
+          return this.ticketService.stimaUrgenza(testo);
+        }),
+      )
+      .subscribe((stima) => {
+        this.stimaInCorso = false;
+        this.stimaUrgenza = stima;
+        if (!this.urgenzaModificataManualmente) {
+          this.urgenzaSelezionata = stima.urgenza;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.stimaSubscription?.unsubscribe();
+  }
+
   ngOnChanges(): void {
     this.form.patchValue({ zonaId: this.zona?.id ?? null });
     if (this.cuboPreimpostato) {
@@ -92,6 +144,28 @@ export class TicketModalComponent implements OnChanges {
 
   selezionaCategoria(categoria: Categoria): void {
     this.form.patchValue({ categoria });
+  }
+
+  /**
+   * Imposta manualmente l'urgenza: da questo momento la stima NLP non la sovrascrive più.
+   */
+  setUrgenza(livello: number): void {
+    this.urgenzaSelezionata = livello;
+    this.urgenzaModificataManualmente = true;
+  }
+
+  /**
+   * Urgenza da includere nella richiesta: quella scelta dall'utente o stimata dall'NLP.
+   * Se la stima non è ancora arrivata (o è il fallback per NLP non raggiungibile)
+   * restituisce undefined, così il backend esegue la propria stima al salvataggio.
+   */
+  private urgenzaDaInviare(): number | undefined {
+    const stimaValida = this.stimaUrgenza !== null && this.stimaUrgenza.confidenza > 0;
+    return this.urgenzaModificataManualmente || stimaValida ? this.urgenzaSelezionata : undefined;
+  }
+
+  onDescrizioneBlur(): void {
+    this.descrizioneBlur$.next();
   }
 
   onClose(): void {
@@ -112,6 +186,7 @@ export class TicketModalComponent implements OnChanges {
       titolo: valori.titolo as string,
       descrizione: valori.descrizione as string,
       categoria: valori.categoria as Categoria,
+      urgenza: this.urgenzaDaInviare(),
     };
 
     this.inviando = true;

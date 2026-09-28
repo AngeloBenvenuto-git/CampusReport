@@ -30,6 +30,8 @@ export interface AdminStatisticheResponse {
   tempoMedioRisoluzioneOre: number;
   ticketPerStato: Record<string, number>;
   ticketPerCategoria: Record<string, number>;
+  /** Numero di segnalazioni per livello di urgenza (chiavi "1"-"5"). */
+  distribuzioneUrgenza: Record<string, number>;
   ticketPerSettimana: SettimanaData[];
   performanceTecnici: TecnicoPerformance[];
 }
@@ -37,7 +39,11 @@ export interface AdminStatisticheResponse {
 export interface ConfigPesiResponse {
   alpha: number;
   beta: number;
+  gamma: number;
+  delta: number;
 }
+
+export type ConfigPesiRequest = ConfigPesiResponse;
 
 export interface CreaTecnicoRequest {
   nome: string;

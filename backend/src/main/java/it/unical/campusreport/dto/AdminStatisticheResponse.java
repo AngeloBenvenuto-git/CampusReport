@@ -18,6 +18,8 @@ public class AdminStatisticheResponse {
     private double tempoMedioRisoluzioneOre;
     private Map<String, Long> ticketPerStato;
     private Map<String, Long> ticketPerCategoria;
+    /** Numero di segnalazioni per livello di urgenza (chiavi 1-5). */
+    private Map<Integer, Long> distribuzioneUrgenza;
     private List<SettimanaData> ticketPerSettimana;
     private List<TecnicoPerformance> performanceTecnici;
 }

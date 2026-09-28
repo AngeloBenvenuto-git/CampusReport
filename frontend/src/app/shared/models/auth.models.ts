@@ -26,3 +26,17 @@ export interface AuthResponse {
   nome: string;
   cognome: string;
 }
+
+export interface AttivaAccountRequest {
+  token: string;
+  password: string;
+  confermaPassword: string;
+}
+
+export interface VerificaTokenResponse {
+  valido: boolean;
+  motivo?: string;
+  nome?: string;
+  cognome?: string;
+  email?: string;
+}

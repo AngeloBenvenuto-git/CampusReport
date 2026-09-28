@@ -6,7 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { Categoria, ModificaTicketRequest, Stato, TicketResponse } from '../../../shared/models/ticket.models';
-import { CATEGORIA_LABEL, STATO_BADGE_CLASS, STATO_COLOR, STATO_LABEL } from '../../../shared/utils/ticket-display.util';
+import { CATEGORIA_LABEL, STATO_BADGE_CLASS, URGENZA_BADGE_CLASS, URGENZA_BADGE_LABEL, STATO_COLOR, STATO_LABEL } from '../../../shared/utils/ticket-display.util';
 import { ZONE_MAP_DEFS } from '../../map/zone-map.data';
 
 interface CategoriaOption {
@@ -27,6 +27,8 @@ const STATI_MODIFICABILI: Stato[] = [Stato.APERTA, Stato.ASSEGNATA];
 export class TicketDetailComponent implements OnInit {
   readonly STATO_LABEL = STATO_LABEL;
   readonly STATO_BADGE_CLASS = STATO_BADGE_CLASS;
+  readonly URGENZA_BADGE_CLASS = URGENZA_BADGE_CLASS;
+  readonly URGENZA_BADGE_LABEL = URGENZA_BADGE_LABEL;
   readonly STATO_COLOR = STATO_COLOR;
   readonly CATEGORIA_LABEL = CATEGORIA_LABEL;
   readonly Stato = Stato;

@@ -32,6 +32,8 @@ import java.util.Map;
 public class AdminStatisticheServiceImpl implements AdminStatisticheService {
 
     private static final int SETTIMANE_STORICO = 8;
+    private static final int URGENZA_MIN = 1;
+    private static final int URGENZA_MAX = 5;
     private static final DateTimeFormatter ETICHETTA_SETTIMANA = DateTimeFormatter.ofPattern("dd/MM");
 
     private final TicketRepository ticketRepository;
@@ -67,6 +69,7 @@ public class AdminStatisticheServiceImpl implements AdminStatisticheService {
                 .tempoMedioRisoluzioneOre(calcolaTempoMedioRisoluzioneOre())
                 .ticketPerStato(ticketPerStato)
                 .ticketPerCategoria(ticketPerCategoria)
+                .distribuzioneUrgenza(calcolaDistribuzioneUrgenza())
                 .ticketPerSettimana(calcolaTicketPerSettimana())
                 .performanceTecnici(calcolaPerformanceTecnici(tecniciAttivi))
                 .build();
@@ -86,6 +89,14 @@ public class AdminStatisticheServiceImpl implements AdminStatisticheService {
         Map<String, Long> risultato = new LinkedHashMap<>();
         for (Categoria categoria : Categoria.values()) {
             risultato.put(categoria.name(), ticketRepository.countByCategoria(categoria));
+        }
+        return risultato;
+    }
+
+    private Map<Integer, Long> calcolaDistribuzioneUrgenza() {
+        Map<Integer, Long> risultato = new LinkedHashMap<>();
+        for (int livello = URGENZA_MIN; livello <= URGENZA_MAX; livello++) {
+            risultato.put(livello, ticketRepository.countByUrgenza(livello));
         }
         return risultato;
     }

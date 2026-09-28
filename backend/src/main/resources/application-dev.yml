@@ -45,8 +45,10 @@ app:
     max-file-size: 5242880
     max-files-per-ticket: 3
   assignment:
-    alpha: 0.6
-    beta: 0.4
+    alpha: 0.5
+    beta: 0.3
+    gamma: 0.1
+    delta: 0.1
 
 logging:
   level:

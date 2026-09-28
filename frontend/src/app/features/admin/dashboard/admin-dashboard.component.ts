@@ -3,7 +3,20 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminStatisticheResponse, TecnicoPerformance } from '../../../shared/models/admin.models';
 import { Stato } from '../../../shared/models/ticket.models';
-import { STATO_COLOR, STATO_LABEL } from '../../../shared/utils/ticket-display.util';
+import {
+  STATO_COLOR,
+  STATO_LABEL,
+  URGENZA_BADGE_LABEL,
+  URGENZA_COLOR,
+} from '../../../shared/utils/ticket-display.util';
+
+interface BarraUrgenza {
+  livello: number;
+  label: string;
+  colore: string;
+  conteggio: number;
+  percentuale: number;
+}
 
 interface SegmentoDonut {
   stato: Stato;
@@ -139,6 +152,31 @@ export class AdminDashboardComponent implements OnInit {
 
   get weeklyBaseline(): number {
     return CHART_HEIGHT - CHART_PADDING_BOTTOM;
+  }
+
+  // ─── Distribuzione urgenza ──────────────────────────────────────────────
+
+  /**
+   * Barre del grafico "Distribuzione urgenza segnalazioni", dal livello 5 (critica) al 1 (minima).
+   */
+  get barreUrgenza(): BarraUrgenza[] {
+    const distribuzione = this.stats?.distribuzioneUrgenza ?? {};
+    const livelli = [5, 4, 3, 2, 1];
+    const massimo = Math.max(1, ...livelli.map((l) => distribuzione[l] ?? 0));
+    return livelli.map((livello) => {
+      const conteggio = distribuzione[livello] ?? 0;
+      return {
+        livello,
+        label: URGENZA_BADGE_LABEL[livello],
+        colore: URGENZA_COLOR[livello],
+        conteggio,
+        percentuale: (conteggio / massimo) * 100,
+      };
+    });
+  }
+
+  get totaleUrgenza(): number {
+    return this.barreUrgenza.reduce((acc, b) => acc + b.conteggio, 0);
   }
 
   // ─── Performance tecnici ────────────────────────────────────────────────

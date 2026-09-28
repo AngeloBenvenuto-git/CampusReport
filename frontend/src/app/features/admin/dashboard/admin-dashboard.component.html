@@ -120,6 +120,23 @@
         </div>
       </div>
 
+      <!-- Distribuzione urgenza -->
+      <div class="mt-6 rounded-xl bg-white p-6 shadow-sm">
+        <h3 class="mb-4 font-semibold text-gray-900">Distribuzione urgenza segnalazioni</h3>
+
+        <div *ngIf="totaleUrgenza === 0" class="py-6 text-center text-sm text-gray-400">Nessun dato disponibile</div>
+
+        <div *ngIf="totaleUrgenza > 0" class="space-y-3">
+          <div *ngFor="let b of barreUrgenza" class="flex items-center gap-3">
+            <span class="w-24 flex-shrink-0 text-sm text-gray-700">{{ b.label }}</span>
+            <div class="h-4 flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div class="h-full rounded-full" [style.background]="b.colore" [style.width.%]="b.percentuale"></div>
+            </div>
+            <span class="w-10 flex-shrink-0 text-right text-sm font-semibold text-gray-900">{{ b.conteggio }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Performance tecnici -->
       <div class="mt-6 rounded-xl bg-white p-6 shadow-sm">
         <h3 class="mb-4 font-semibold text-gray-900">Performance tecnici</h3>

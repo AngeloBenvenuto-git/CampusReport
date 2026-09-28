@@ -5,6 +5,7 @@ import { AdminConfigComponent } from './features/admin/config/admin-config.compo
 import { AdminDashboardComponent } from './features/admin/dashboard/admin-dashboard.component';
 import { AdminTecniciComponent } from './features/admin/tecnici/admin-tecnici.component';
 import { AdminTicketsComponent } from './features/admin/tickets/admin-tickets.component';
+import { AttivaAccountComponent } from './features/auth/attiva/attiva-account.component';
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
@@ -17,6 +18,7 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', component: LandingComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'attiva', component: AttivaAccountComponent },
   {
     path: 'map',
     component: MapComponent,

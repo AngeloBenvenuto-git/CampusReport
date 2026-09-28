@@ -19,6 +19,16 @@ class ClassifyResponse(BaseModel):
     alternative: List[AlternativaCategoria]
 
 
+class UrgenzaRequest(BaseModel):
+    testo: str = Field(..., min_length=3, max_length=2000)
+
+
+class UrgenzaResponse(BaseModel):
+    urgenza: int = Field(..., ge=1, le=5)  # 1 = minima, 5 = massima
+    confidenza: float
+    descrizione: str  # descrizione del livello vincente
+
+
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool

@@ -59,7 +59,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoint pubblici
-                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register", "/auth/activate").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register", "/auth/attiva").permitAll()
+                .requestMatchers(HttpMethod.GET, "/auth/verifica-token").permitAll()
                 // Utente corrente: qualsiasi ruolo autenticato
                 .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
                 // Mappa: qualsiasi ruolo autenticato

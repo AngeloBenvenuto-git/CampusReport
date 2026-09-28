@@ -9,6 +9,8 @@ import {
   CATEGORIA_LABEL,
   dataRelativa,
   STATO_BADGE_CLASS,
+  URGENZA_BADGE_CLASS,
+  URGENZA_BADGE_LABEL,
   STATO_COLOR,
   STATO_LABEL,
 } from '../../../shared/utils/ticket-display.util';
@@ -44,6 +46,8 @@ interface BarraCategoria {
 export class TicketListComponent implements OnInit {
   readonly STATO_LABEL = STATO_LABEL;
   readonly STATO_BADGE_CLASS = STATO_BADGE_CLASS;
+  readonly URGENZA_BADGE_CLASS = URGENZA_BADGE_CLASS;
+  readonly URGENZA_BADGE_LABEL = URGENZA_BADGE_LABEL;
   readonly STATO_COLOR = STATO_COLOR;
   readonly CATEGORIA_LABEL = CATEGORIA_LABEL;
   readonly dataRelativa = dataRelativa;

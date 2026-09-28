@@ -65,6 +65,8 @@ export interface TicketResponse {
   segnalante: UserResponse;
   tecnico: UserResponse | null;
   categoriaConfidenza: number | null;
+  /** Urgenza 1-5; null per i ticket creati prima dell'introduzione del campo. */
+  urgenza: number | null;
   createdAt: string;
   updatedAt: string;
   storico: CambioStatoResponse[];
@@ -77,6 +79,14 @@ export interface TicketRequest {
   titolo: string;
   descrizione: string;
   categoria: Categoria;
+  /** Urgenza 1-5; se assente il backend usa la stima del microservizio NLP. */
+  urgenza?: number;
+}
+
+/** Risposta del microservizio NLP per la stima dell'urgenza. */
+export interface StimaUrgenzaResponse {
+  urgenza: number;
+  confidenza: number;
 }
 
 export interface ModificaTicketRequest {

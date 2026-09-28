@@ -72,14 +72,13 @@ public class TicketServiceImpl implements TicketService {
         Zona zona = zonaRepository.findById(request.getZonaId())
                 .orElseThrow(() -> new ZonaNotFoundException("Zona non trovata con id: " + request.getZonaId()));
 
-        Priorita priorita = utente.getRuolo() == Ruolo.DOCENTE ? Priorita.ALTA : Priorita.NORMALE;
-
+        // Priorità provvisoria (colonna NOT NULL): quella definitiva dipende dall'urgenza, calcolata sotto
         Ticket ticket = Ticket.builder()
                 .titolo(request.getTitolo())
                 .descrizione(request.getDescrizione())
                 .categoria(request.getCategoria())
                 .stato(Stato.APERTA)
-                .priorita(priorita)
+                .priorita(Priorita.NORMALE)
                 .cubo(request.getCubo())
                 .piano(request.getPiano())
                 .zona(zona)
@@ -99,6 +98,19 @@ public class TicketServiceImpl implements TicketService {
             }
         }
         ticket.setCategoriaConfidenza(nlpResponse.getConfidenza());
+
+        // 1b. Urgenza: prevale quella indicata dall'utente, altrimenti la stima NLP
+        NlpUrgenzaResponse urgenzaResponse = nlpClient.classifyUrgenza(request.getDescrizione());
+        if (request.getUrgenza() != null) {
+            ticket.setUrgenza(request.getUrgenza());
+        } else {
+            ticket.setUrgenza(urgenzaResponse.getUrgenza());
+        }
+
+        // 1c. Priorità derivata dall'urgenza (non più dal ruolo del segnalante)
+        int urgenzaValore = ticket.getUrgenza() != null ? ticket.getUrgenza() : 3;
+        Priorita priorita = urgenzaValore >= 4 ? Priorita.ALTA : Priorita.NORMALE;
+        ticket.setPriorita(priorita);
         ticket = ticketRepository.save(ticket);
 
         // 2. CambioStato iniziale: null → APERTA
@@ -113,9 +125,9 @@ public class TicketServiceImpl implements TicketService {
         assegnazioneService.assegna(ticket);
         ticket = ticketRepository.save(ticket);
 
-        log.info("Ticket {} creato con stato {}, priorità {}, categoria {}, confidenza NLP {}",
+        log.info("Ticket {} creato con stato {}, priorità {}, categoria {}, confidenza NLP {}, urgenza {}",
                 ticket.getId(), ticket.getStato(), priorita,
-                ticket.getCategoria(), ticket.getCategoriaConfidenza());
+                ticket.getCategoria(), ticket.getCategoriaConfidenza(), ticket.getUrgenza());
 
         List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
         return toTicketResponse(ticket, storico);
@@ -403,6 +415,7 @@ public class TicketServiceImpl implements TicketService {
                 .segnalante(toUserResponse(ticket.getSegnalante()))
                 .tecnico(ticket.getTecnico() != null ? toUserResponse(ticket.getTecnico()) : null)
                 .categoriaConfidenza(ticket.getCategoriaConfidenza())
+                .urgenza(ticket.getUrgenza())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
                 .storico(storico.stream().map(this::toCambioStatoResponse).collect(Collectors.toList()))

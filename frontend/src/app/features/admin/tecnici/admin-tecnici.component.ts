@@ -3,8 +3,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
+import { TicketService } from '../../../core/services/ticket.service';
 import { TecnicoAdminResponse } from '../../../shared/models/admin.models';
-import { Categoria } from '../../../shared/models/ticket.models';
+import { Categoria, ZonaResponse } from '../../../shared/models/ticket.models';
 import { CATEGORIA_LABEL } from '../../../shared/utils/ticket-display.util';
 import { caricoColore, SPECIALIZZAZIONE_BADGE_CLASS } from '../../../shared/utils/admin-display.util';
 
@@ -25,6 +26,7 @@ export class AdminTecniciComponent implements OnInit {
   messaggioSuccesso: string | null = null;
 
   tecnici: TecnicoAdminResponse[] = [];
+  zone: ZonaResponse[] = [];
   loadingStato: Record<string, boolean> = {};
 
   // ─── Modal nuovo tecnico ────────────────────────────────────────────────
@@ -58,10 +60,28 @@ export class AdminTecniciComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
+    private ticketService: TicketService,
   ) {}
 
   ngOnInit(): void {
     this.caricaTecnici();
+    this.caricaZone();
+  }
+
+  private caricaZone(): void {
+    this.ticketService.getZone().subscribe({
+      next: (zone) => (this.zone = zone),
+      error: () => (this.errore = 'Impossibile caricare le zone.'),
+    });
+  }
+
+  /**
+   * Indica se la zona attuale del tecnico in modifica non corrisponde a nessuna zona del backend
+   * (es. valore inserito come testo libero in passato), così da mostrarla comunque nel select.
+   */
+  zonaAttualeFuoriElenco(): boolean {
+    const zona = this.tecnicoInModifica?.zona;
+    return !!zona && !this.zone.some((z) => z.nome === zona);
   }
 
   private caricaTecnici(): void {
@@ -110,7 +130,7 @@ export class AdminTecniciComponent implements OnInit {
   // ─── Modal nuovo tecnico ────────────────────────────────────────────────
 
   apriModalNuovo(): void {
-    this.formNuovo.reset({ caricoMassimo: 10 });
+    this.formNuovo.reset({ zona: '', caricoMassimo: 10 });
     this.specializzazioniNuovo = [];
     this.erroreNuovo = null;
     this.modalNuovoAperto = true;

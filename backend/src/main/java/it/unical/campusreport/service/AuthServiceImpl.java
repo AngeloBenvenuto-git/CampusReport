@@ -1,14 +1,21 @@
 package it.unical.campusreport.service;
 
+import it.unical.campusreport.dto.AttivaAccountRequest;
 import it.unical.campusreport.dto.AuthResponse;
 import it.unical.campusreport.dto.LoginRequest;
 import it.unical.campusreport.dto.RegisterRequest;
+import it.unical.campusreport.dto.VerificaTokenResponse;
+import it.unical.campusreport.entity.PasswordResetToken;
 import it.unical.campusreport.entity.User;
 import it.unical.campusreport.entity.enums.Ruolo;
 import it.unical.campusreport.exception.EmailAlreadyExistsException;
 import it.unical.campusreport.exception.InvalidCredentialsException;
 import it.unical.campusreport.exception.InvalidDomainException;
+import it.unical.campusreport.exception.PasswordNonCoincidentiException;
+import it.unical.campusreport.exception.TokenNonValidoException;
+import it.unical.campusreport.exception.TokenScadutoException;
 import it.unical.campusreport.exception.UserNotActiveException;
+import it.unical.campusreport.repository.PasswordResetTokenRepository;
 import it.unical.campusreport.repository.UserRepository;
 import it.unical.campusreport.security.JwtService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 /**
  * Implementazione di {@link AuthService} con logica di registrazione e login.
  */
@@ -24,16 +34,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
+    static final String MSG_TOKEN_NON_VALIDO = "Il link di attivazione non è valido o è già stato utilizzato";
+    static final String MSG_TOKEN_SCADUTO =
+            "Il link di attivazione è scaduto. Contatta l'amministratore per riceverne uno nuovo";
+
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final boolean domainValidation;
 
     public AuthServiceImpl(UserRepository userRepository,
+                           PasswordResetTokenRepository passwordResetTokenRepository,
                            JwtService jwtService,
                            PasswordEncoder passwordEncoder,
                            @Value("${app.email.domain-validation}") boolean domainValidation) {
         this.userRepository = userRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.domainValidation = domainValidation;
@@ -92,6 +109,61 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtService.generateToken(user);
         return buildAuthResponse(token, user);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public AuthResponse attivaAccount(AttivaAccountRequest request) {
+        PasswordResetToken token = passwordResetTokenRepository.findByTokenAndUsatoFalse(request.getToken())
+                .orElseThrow(() -> new TokenNonValidoException(MSG_TOKEN_NON_VALIDO));
+
+        if (token.getScadenza().isBefore(LocalDateTime.now())) {
+            throw new TokenScadutoException(MSG_TOKEN_SCADUTO);
+        }
+
+        if (!request.getPassword().equals(request.getConfermaPassword())) {
+            throw new PasswordNonCoincidentiException("Le password non coincidono");
+        }
+
+        User utente = token.getUser();
+        utente.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        utente.setAttivo(true);
+        userRepository.save(utente);
+
+        token.setUsato(true);
+        passwordResetTokenRepository.save(token);
+
+        log.info("Account attivato: {}", utente.getEmail());
+
+        String jwt = jwtService.generateToken(utente);
+        return buildAuthResponse(jwt, utente);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public VerificaTokenResponse verificaToken(String token) {
+        Optional<PasswordResetToken> opt = passwordResetTokenRepository.findByTokenAndUsatoFalse(token);
+
+        if (opt.isEmpty()) {
+            return VerificaTokenResponse.builder().valido(false).motivo(MSG_TOKEN_NON_VALIDO).build();
+        }
+        if (opt.get().getScadenza().isBefore(LocalDateTime.now())) {
+            return VerificaTokenResponse.builder().valido(false).motivo(MSG_TOKEN_SCADUTO).build();
+        }
+
+        User utente = opt.get().getUser();
+        return VerificaTokenResponse.builder()
+                .valido(true)
+                .nome(utente.getNome())
+                .cognome(utente.getCognome())
+                .email(utente.getEmail())
+                .build();
     }
 
     /**

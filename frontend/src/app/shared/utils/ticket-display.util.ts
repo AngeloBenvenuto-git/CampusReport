@@ -43,6 +43,42 @@ export const CATEGORIA_INIZIALE: Record<Categoria, string> = {
   [Categoria.ALTRO]: '?',
 };
 
+/** Etichetta del badge di urgenza (livelli 1-5). */
+export const URGENZA_BADGE_LABEL: Record<number, string> = {
+  5: '⚡ Critica',
+  4: '↑ Alta',
+  3: '→ Media',
+  2: '↓ Bassa',
+  1: 'Minima',
+};
+
+/** Classi Tailwind del badge di urgenza (livelli 1-5). */
+export const URGENZA_BADGE_CLASS: Record<number, string> = {
+  5: 'bg-red-100 text-red-700',
+  4: 'bg-orange-100 text-orange-700',
+  3: 'bg-yellow-100 text-yellow-700',
+  2: 'bg-sky-100 text-sky-700',
+  1: 'bg-gray-100 text-gray-500',
+};
+
+/** Colore esadecimale per ogni livello di urgenza (usato nei grafici). */
+export const URGENZA_COLOR: Record<number, string> = {
+  5: '#EF4444',
+  4: '#F97316',
+  3: '#EAB308',
+  2: '#38BDF8',
+  1: '#9CA3AF',
+};
+
+/** Descrizione estesa di ogni livello di urgenza (form di creazione). */
+export const URGENZA_DESCRIZIONE: Record<number, string> = {
+  1: 'Minima — può aspettare',
+  2: 'Bassa — non urgente',
+  3: 'Media — da risolvere presto',
+  4: 'Alta — problema grave',
+  5: 'Critica — emergenza',
+};
+
 export function dataRelativa(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffSec = Math.floor(diffMs / 1000);

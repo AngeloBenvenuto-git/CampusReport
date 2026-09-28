@@ -73,6 +73,12 @@
               <p class="text-xs text-gray-400">Priorità</p>
               <p class="text-sm font-medium text-gray-900">{{ t.priorita }}</p>
             </div>
+            <div *ngIf="t.urgenza">
+              <p class="text-xs text-gray-400">Urgenza</p>
+              <span class="mt-0.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium" [ngClass]="URGENZA_BADGE_CLASS[t.urgenza]">
+                {{ URGENZA_BADGE_LABEL[t.urgenza] }}
+              </span>
+            </div>
             <div>
               <p class="text-xs text-gray-400">Data creazione</p>
               <p class="text-sm font-medium text-gray-900">{{ t.createdAt | date: 'dd MMM yyyy, HH:mm' }}</p>

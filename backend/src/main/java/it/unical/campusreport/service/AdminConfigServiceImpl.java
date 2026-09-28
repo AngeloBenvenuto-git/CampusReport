@@ -28,7 +28,7 @@ public class AdminConfigServiceImpl implements AdminConfigService {
      */
     @Override
     public ConfigPesiResponse getPesi() {
-        return new ConfigPesiResponse(assegnazioneConfig.getAlpha(), assegnazioneConfig.getBeta());
+        return toResponse();
     }
 
     /**
@@ -36,16 +36,25 @@ public class AdminConfigServiceImpl implements AdminConfigService {
      */
     @Override
     public ConfigPesiResponse aggiornaPesi(ConfigPesiRequest request) {
-        double somma = request.getAlpha() + request.getBeta();
+        double somma = request.getAlpha() + request.getBeta() + request.getGamma() + request.getDelta();
         if (Math.abs(somma - 1.0) > TOLLERANZA_SOMMA) {
             throw new ConfigPesiInvalidiException(
-                    String.format("alpha + beta deve essere uguale a 1.0, trovato: %.6f", somma));
+                    String.format("alpha + beta + gamma + delta deve essere uguale a 1.0, trovato: %.6f", somma));
         }
 
         assegnazioneConfig.setAlpha(request.getAlpha());
         assegnazioneConfig.setBeta(request.getBeta());
+        assegnazioneConfig.setGamma(request.getGamma());
+        assegnazioneConfig.setDelta(request.getDelta());
 
-        log.info("Pesi assegnazione aggiornati: alpha={}, beta={}", request.getAlpha(), request.getBeta());
-        return new ConfigPesiResponse(assegnazioneConfig.getAlpha(), assegnazioneConfig.getBeta());
+        log.info("Pesi assegnazione aggiornati: alpha={}, beta={}, gamma={}, delta={}",
+                request.getAlpha(), request.getBeta(), request.getGamma(), request.getDelta());
+        return toResponse();
+    }
+
+    private ConfigPesiResponse toResponse() {
+        return new ConfigPesiResponse(
+                assegnazioneConfig.getAlpha(), assegnazioneConfig.getBeta(),
+                assegnazioneConfig.getGamma(), assegnazioneConfig.getDelta());
     }
 }

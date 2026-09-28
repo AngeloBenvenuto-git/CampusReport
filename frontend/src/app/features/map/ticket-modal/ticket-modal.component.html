@@ -80,6 +80,7 @@
           <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Descrizione *</label>
           <textarea
             formControlName="descrizione"
+            (blur)="onDescrizioneBlur()"
             rows="3"
             placeholder="Fornisci maggiori dettagli sul problema..."
             class="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
@@ -104,6 +105,37 @@
               <span class="text-xs text-gray-700">{{ c.label }}</span>
             </div>
           </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wide text-gray-500">Urgenza</label>
+          <p class="mt-0.5 text-xs text-gray-400">
+            Il sistema stima automaticamente l'urgenza dalla descrizione. Puoi modificarla.
+          </p>
+          <div class="mt-2 flex gap-2">
+            <button
+              *ngFor="let i of livelliUrgenza"
+              type="button"
+              (click)="setUrgenza(i)"
+              [title]="URGENZA_DESCRIZIONE[i]"
+              class="h-8 w-8 rounded-full border-2 text-sm font-medium transition-all"
+              [class.bg-red-500]="i <= urgenzaSelezionata && urgenzaSelezionata >= 4"
+              [class.bg-orange-400]="i <= urgenzaSelezionata && urgenzaSelezionata === 3"
+              [class.bg-yellow-400]="i <= urgenzaSelezionata && urgenzaSelezionata <= 2"
+              [class.text-white]="i <= urgenzaSelezionata"
+              [class.border-transparent]="i <= urgenzaSelezionata"
+              [class.border-gray-200]="i > urgenzaSelezionata"
+              [class.text-gray-400]="i > urgenzaSelezionata"
+            >
+              {{ i }}
+            </button>
+          </div>
+          <p class="mt-1.5 text-sm text-gray-700">{{ URGENZA_DESCRIZIONE[urgenzaSelezionata] }}</p>
+          <p *ngIf="stimaInCorso" class="text-xs text-gray-400">Stima in corso...</p>
+          <p *ngIf="!stimaInCorso && stimaUrgenza" class="text-xs text-gray-400">
+            Stimato dal sistema: {{ stimaUrgenza.urgenza }}/5 (confidenza: {{ stimaUrgenza.confidenza | percent: '1.0-0' }})
+          </p>
+          <p *ngIf="urgenzaModificataManualmente" class="text-xs text-blue-500">Modificato manualmente</p>
         </div>
 
         <p *ngIf="errore" class="text-sm text-red-600">{{ errore }}</p>

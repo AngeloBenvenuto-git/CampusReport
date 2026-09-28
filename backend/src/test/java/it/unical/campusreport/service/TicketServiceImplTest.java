@@ -2,7 +2,9 @@ package it.unical.campusreport.service;
 
 import it.unical.campusreport.dto.ModificaTicketRequest;
 import it.unical.campusreport.dto.NlpResponse;
+import it.unical.campusreport.dto.NlpUrgenzaResponse;
 import it.unical.campusreport.dto.RifiutoRequest;
+import it.unical.campusreport.dto.TicketRequest;
 import it.unical.campusreport.dto.TicketResponse;
 import it.unical.campusreport.entity.Allegato;
 import it.unical.campusreport.entity.CambioStato;
@@ -91,6 +93,67 @@ class TicketServiceImplTest {
         request.setTipoRifiuto(tipo);
         request.setMotivazione(motivazione);
         return request;
+    }
+
+    // ─── creaTicket: priorità derivata dall'urgenza ──────────────────────────────
+
+    private Ticket creaTicketConUrgenza(User utente, Integer urgenzaUtente, int urgenzaNlp) {
+        Zona zona = Zona.builder().id(UUID.randomUUID()).nome("Cubo 42").build();
+
+        TicketRequest request = new TicketRequest();
+        request.setZonaId(zona.getId());
+        request.setTitolo("WiFi assente");
+        request.setDescrizione("Il WiFi non funziona");
+        request.setCategoria(Categoria.WIFI);
+        request.setUrgenza(urgenzaUtente);
+
+        NlpResponse nlpResponse = new NlpResponse();
+        nlpResponse.setCategoria("WIFI");
+        nlpResponse.setConfidenza(0.9f);
+        NlpUrgenzaResponse urgenzaResponse = new NlpUrgenzaResponse();
+        urgenzaResponse.setUrgenza(urgenzaNlp);
+
+        when(zonaRepository.findById(zona.getId())).thenReturn(Optional.of(zona));
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(nlpClient.classifyText(any())).thenReturn(nlpResponse);
+        when(nlpClient.classifyUrgenza(any())).thenReturn(urgenzaResponse);
+        when(cambioStatoRepository.findByTicketOrderByTimestampAsc(any())).thenReturn(List.of());
+
+        service.creaTicket(request, utente);
+
+        ArgumentCaptor<Ticket> captor = ArgumentCaptor.forClass(Ticket.class);
+        verify(assegnazioneService).assegna(captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    void creaTicket_docenteConUrgenza3_prioritaNormale() {
+        Ticket ticket = creaTicketConUrgenza(buildUser("Paolo", Ruolo.DOCENTE), 3, 5);
+
+        assertThat(ticket.getUrgenza()).isEqualTo(3);
+        assertThat(ticket.getPriorita()).isEqualTo(Priorita.NORMALE);
+    }
+
+    @Test
+    void creaTicket_urgenza4_prioritaAlta() {
+        Ticket ticket = creaTicketConUrgenza(buildUser("Luca", Ruolo.STUDENTE), 4, 1);
+
+        assertThat(ticket.getPriorita()).isEqualTo(Priorita.ALTA);
+    }
+
+    @Test
+    void creaTicket_urgenza3_prioritaNormale() {
+        Ticket ticket = creaTicketConUrgenza(buildUser("Luca", Ruolo.STUDENTE), 3, 5);
+
+        assertThat(ticket.getPriorita()).isEqualTo(Priorita.NORMALE);
+    }
+
+    @Test
+    void creaTicket_urgenzaStimataDaNlp_determinaPriorita() {
+        Ticket ticket = creaTicketConUrgenza(buildUser("Luca", Ruolo.STUDENTE), null, 4);
+
+        assertThat(ticket.getUrgenza()).isEqualTo(4);
+        assertThat(ticket.getPriorita()).isEqualTo(Priorita.ALTA);
     }
 
     // ─── CASO 2: RIASSEGNA ────────────────────────────────────────────────────────

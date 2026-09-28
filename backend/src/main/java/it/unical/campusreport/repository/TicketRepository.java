@@ -32,5 +32,7 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID>, JpaSpecif
 
     long countByCategoria(Categoria categoria);
 
+    long countByUrgenza(Integer urgenza);
+
     long countByStatoAndTecnico(Stato stato, User tecnico);
 }

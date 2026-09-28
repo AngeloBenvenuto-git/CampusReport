@@ -63,6 +63,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestisce un token di attivazione inesistente o già utilizzato.
+     */
+    @ExceptionHandler(TokenNonValidoException.class)
+    public ResponseEntity<Map<String, Object>> handleTokenNonValido(TokenNonValidoException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Token non valido", ex.getMessage());
+    }
+
+    /**
+     * Gestisce un token di attivazione scaduto.
+     */
+    @ExceptionHandler(TokenScadutoException.class)
+    public ResponseEntity<Map<String, Object>> handleTokenScaduto(TokenScadutoException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Token scaduto", ex.getMessage());
+    }
+
+    /**
+     * Gestisce password e conferma password non coincidenti.
+     */
+    @ExceptionHandler(PasswordNonCoincidentiException.class)
+    public ResponseEntity<Map<String, Object>> handlePasswordNonCoincidenti(PasswordNonCoincidentiException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Password non coincidenti", ex.getMessage());
+    }
+
+    /**
      * Gestisce la ricerca di un ticket inesistente.
      */
     @ExceptionHandler(TicketNotFoundException.class)

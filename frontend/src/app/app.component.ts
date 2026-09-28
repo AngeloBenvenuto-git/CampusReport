@@ -4,7 +4,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { NavbarComponent } from './shared/navbar/navbar.component';
 
-const ROTTE_SENZA_NAVBAR = ['/login', '/register'];
+const ROTTE_SENZA_NAVBAR = ['/login', '/register', '/attiva'];
 
 @Component({
   selector: 'app-root',

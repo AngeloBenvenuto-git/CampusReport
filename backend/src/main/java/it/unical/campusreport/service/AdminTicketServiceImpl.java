@@ -256,6 +256,7 @@ public class AdminTicketServiceImpl implements AdminTicketService {
                 .segnalante(toUserResponse(ticket.getSegnalante()))
                 .tecnico(ticket.getTecnico() != null ? toUserResponse(ticket.getTecnico()) : null)
                 .categoriaConfidenza(ticket.getCategoriaConfidenza())
+                .urgenza(ticket.getUrgenza())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
                 .storico(storico.stream().map(this::toCambioStatoResponse).collect(Collectors.toList()))

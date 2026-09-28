@@ -4,6 +4,22 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../core/services/admin.service';
 import { ConfigPesiResponse } from '../../../shared/models/admin.models';
 
+type NomePeso = 'alpha' | 'beta' | 'gamma' | 'delta';
+
+interface PesoDef {
+  chiave: NomePeso;
+  simbolo: string;
+  nome: string;
+  descrizione: string;
+}
+
+const PESI: PesoDef[] = [
+  { chiave: 'alpha', simbolo: 'α', nome: 'Alpha', descrizione: 'Peso specializzazione tecnico' },
+  { chiave: 'beta', simbolo: 'β', nome: 'Beta', descrizione: 'Peso carico di lavoro' },
+  { chiave: 'gamma', simbolo: 'γ', nome: 'Gamma', descrizione: 'Peso urgenza segnalazione' },
+  { chiave: 'delta', simbolo: 'δ', nome: 'Delta', descrizione: 'Peso vicinanza zona tecnico' },
+];
+
 @Component({
   selector: 'app-admin-config',
   standalone: true,
@@ -11,12 +27,13 @@ import { ConfigPesiResponse } from '../../../shared/models/admin.models';
   templateUrl: './admin-config.component.html',
 })
 export class AdminConfigComponent implements OnInit {
+  readonly pesiDef = PESI;
+
   caricamento = true;
   errore: string | null = null;
   messaggioSuccesso: string | null = null;
 
-  alpha = 0.5;
-  beta = 0.5;
+  pesi: ConfigPesiResponse = { alpha: 0.5, beta: 0.3, gamma: 0.1, delta: 0.1 };
 
   salvando = false;
   configAttuale: ConfigPesiResponse | null = null;
@@ -26,8 +43,7 @@ export class AdminConfigComponent implements OnInit {
   ngOnInit(): void {
     this.adminService.getPesi().subscribe({
       next: (pesi) => {
-        this.alpha = pesi.alpha;
-        this.beta = pesi.beta;
+        this.pesi = { ...pesi };
         this.configAttuale = pesi;
         this.caricamento = false;
       },
@@ -38,17 +54,20 @@ export class AdminConfigComponent implements OnInit {
     });
   }
 
+  /** Somma α + β + γ + δ arrotondata a due decimali. */
   get somma(): number {
-    return Math.round((this.alpha + this.beta) * 100) / 100;
+    const { alpha, beta, gamma, delta } = this.pesi;
+    return Math.round((alpha + beta + gamma + delta) * 100) / 100;
   }
 
   get configurazioneValida(): boolean {
-    return this.somma === 1;
+    return this.somma === 1 && PESI.every((p) => this.pesi[p.chiave] >= 0 && this.pesi[p.chiave] <= 1);
   }
 
-  onAlphaChange(valore: number): void {
-    this.alpha = valore;
-    this.beta = Math.round((1 - valore) * 100) / 100;
+  /** Aggiorna un singolo peso normalizzando l'input numerico a due decimali. */
+  onPesoChange(chiave: NomePeso, valore: number | string): void {
+    const numero = Number(valore);
+    this.pesi = { ...this.pesi, [chiave]: Number.isFinite(numero) ? Math.round(numero * 100) / 100 : 0 };
   }
 
   salvaConfigurazione(): void {
@@ -58,7 +77,7 @@ export class AdminConfigComponent implements OnInit {
     this.errore = null;
     this.messaggioSuccesso = null;
 
-    this.adminService.aggiornaPesi(this.alpha, this.beta).subscribe({
+    this.adminService.aggiornaPesi(this.pesi).subscribe({
       next: (pesi) => {
         this.configAttuale = pesi;
         this.salvando = false;

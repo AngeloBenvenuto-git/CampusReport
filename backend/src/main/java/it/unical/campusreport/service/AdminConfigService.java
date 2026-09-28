@@ -21,7 +21,7 @@ public interface AdminConfigService {
      *
      * @param request nuovi pesi (la somma deve essere 1.0)
      * @return pesi aggiornati
-     * @throws it.unical.campusreport.exception.ConfigPesiInvalidiException se alpha + beta ≠ 1.0
+     * @throws it.unical.campusreport.exception.ConfigPesiInvalidiException se alpha + beta + gamma + delta ≠ 1.0
      */
     ConfigPesiResponse aggiornaPesi(ConfigPesiRequest request);
 }

@@ -1,6 +1,8 @@
 package it.unical.campusreport.dto;
 
 import it.unical.campusreport.entity.enums.Categoria;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -31,4 +33,9 @@ public class TicketRequest {
 
     @NotNull(message = "La categoria è obbligatoria")
     private Categoria categoria;
+
+    /** Urgenza 1-5 indicata dall'utente; se null si usa la stima del microservizio NLP. */
+    @Min(value = 1, message = "L'urgenza minima è 1")
+    @Max(value = 5, message = "L'urgenza massima è 5")
+    private Integer urgenza;
 }

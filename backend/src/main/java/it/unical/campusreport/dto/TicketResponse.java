@@ -28,6 +28,7 @@ public class TicketResponse {
     private UserResponse segnalante;
     private UserResponse tecnico;
     private Float categoriaConfidenza;
+    private Integer urgenza;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<CambioStatoResponse> storico;

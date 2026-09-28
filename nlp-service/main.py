@@ -9,7 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from classifier import NLPClassifier
 from config import MODEL_NAME, PORT
-from models import ClassifyRequest, ClassifyResponse, HealthResponse
+from models import (
+    ClassifyRequest,
+    ClassifyResponse,
+    HealthResponse,
+    UrgenzaRequest,
+    UrgenzaResponse,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,6 +57,18 @@ async def classify(request: ClassifyRequest) -> ClassifyResponse:
     except Exception as e:
         logger.error("Errore durante la classificazione: %s", e)
         raise HTTPException(status_code=500, detail="Errore interno durante la classificazione")
+
+
+@app.post("/classify-urgenza", response_model=UrgenzaResponse)
+async def classify_urgenza(request: UrgenzaRequest) -> UrgenzaResponse:
+    """Stima l'urgenza (1-5) di una segnalazione a partire dalla sua descrizione."""
+    if not nlp_classifier.is_loaded():
+        raise HTTPException(status_code=503, detail="Modello non ancora caricato")
+    try:
+        return nlp_classifier.classify_urgenza(request.testo)
+    except Exception as e:
+        logger.error("Errore classify_urgenza: %s", e)
+        raise HTTPException(status_code=500, detail="Errore nella classificazione urgenza")
 
 
 @app.get("/health", response_model=HealthResponse)

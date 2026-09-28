@@ -167,7 +167,7 @@ public class AdminController {
     /**
      * Restituisce i pesi correnti dell'algoritmo di assegnazione.
      *
-     * @return pesi alpha e beta attuali
+     * @return pesi alpha, beta, gamma e delta attuali
      */
     @GetMapping("/config/pesi")
     public ResponseEntity<ConfigPesiResponse> getPesi() {
@@ -176,14 +176,15 @@ public class AdminController {
     }
 
     /**
-     * Aggiorna a runtime i pesi alpha e beta dell'algoritmo di assegnazione.
+     * Aggiorna a runtime i pesi alpha, beta, gamma e delta dell'algoritmo di assegnazione.
      *
      * @param request nuovi pesi (la somma deve essere 1.0)
      * @return pesi aggiornati
      */
     @PostMapping("/config/pesi")
     public ResponseEntity<ConfigPesiResponse> aggiornaPesi(@Valid @RequestBody ConfigPesiRequest request) {
-        log.info("Admin: aggiornamento pesi assegnazione, alpha={}, beta={}", request.getAlpha(), request.getBeta());
+        log.info("Admin: aggiornamento pesi assegnazione, alpha={}, beta={}, gamma={}, delta={}",
+                request.getAlpha(), request.getBeta(), request.getGamma(), request.getDelta());
         return ResponseEntity.ok(adminConfigService.aggiornaPesi(request));
     }
 

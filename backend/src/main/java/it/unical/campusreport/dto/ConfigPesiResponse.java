@@ -15,4 +15,6 @@ import lombok.NoArgsConstructor;
 public class ConfigPesiResponse {
     private double alpha;
     private double beta;
+    private double gamma;
+    private double delta;
 }
