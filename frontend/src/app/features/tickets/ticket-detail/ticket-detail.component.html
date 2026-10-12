@@ -124,6 +124,9 @@
         </div>
       </div>
 
+      <!-- Chat con il tecnico: disponibile solo con un tecnico assegnato -->
+      <app-chat *ngIf="t.tecnico" [ticketId]="t.id"></app-chat>
+
       <!-- Modal di modifica -->
       <div
         *ngIf="modalModificaAperto"

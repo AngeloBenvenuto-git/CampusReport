@@ -1,21 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { TicketService, URGENZA_DEFAULT } from '../../core/services/ticket.service';
+import { ChatComponent } from '../../shared/components/chat/chat.component';
 import { Priorita, Stato, TicketResponse, TipoRifiuto } from '../../shared/models/ticket.models';
 import { dataRelativa, STATO_BADGE_CLASS, STATO_LABEL } from '../../shared/utils/ticket-display.util';
 
 const CARICO_MASSIMO = 10;
 
+/** Intervallo di polling dei messaggi non letti (ms). */
+const POLLING_INTERVAL_MS = 10000;
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ChatComponent],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   readonly oggi = new Date();
   readonly caricoMassimo = CARICO_MASSIMO;
   readonly dataRelativa = dataRelativa;
@@ -35,6 +39,11 @@ export class DashboardComponent implements OnInit {
 
   readonly TipoRifiuto = TipoRifiuto;
 
+  /** Id del ticket con la chat espansa, null se nessuna chat è aperta. */
+  chatAperta: string | null = null;
+  nonLettiPerTicket: Record<string, number> = {};
+  private pollingInterval: ReturnType<typeof setInterval> | undefined;
+
   constructor(
     private ticketService: TicketService,
     private authService: AuthService,
@@ -45,12 +54,19 @@ export class DashboardComponent implements OnInit {
       next: (tickets) => {
         this.tickets = tickets;
         this.caricamento = false;
+        this.aggiornaNonLetti();
       },
       error: () => {
         this.caricamento = false;
         this.errore = 'Impossibile caricare le segnalazioni assegnate.';
       },
     });
+
+    this.pollingInterval = setInterval(() => this.aggiornaNonLetti(), POLLING_INTERVAL_MS);
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.pollingInterval);
   }
 
   // ─── Utente ─────────────────────────────────────────────────────────────
@@ -146,6 +162,25 @@ export class DashboardComponent implements OnInit {
     const idx = this.tickets.findIndex((t) => t.id === updated.id);
     if (idx !== -1) this.tickets[idx] = updated;
     this.loading[updated.id] = false;
+  }
+
+  // ─── Chat ───────────────────────────────────────────────────────────────
+
+  /** Apre o chiude la chat del ticket nella card. */
+  toggleChat(ticket: TicketResponse): void {
+    this.chatAperta = this.chatAperta === ticket.id ? null : ticket.id;
+  }
+
+  /** Aggiorna il conteggio dei messaggi non letti per tutti i ticket attivi. */
+  private aggiornaNonLetti(): void {
+    this.ticketAttivi.forEach((t) => {
+      // La chat aperta si aggiorna da sola e marca i messaggi come letti
+      if (t.id === this.chatAperta) return;
+      this.ticketService.getNonLetti(t.id).subscribe({
+        next: (r) => (this.nonLettiPerTicket[t.id] = r.nonLetti),
+        error: () => {},
+      });
+    });
   }
 
   // ─── Modal rifiuto ──────────────────────────────────────────────────────

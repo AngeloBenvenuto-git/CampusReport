@@ -70,6 +70,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/tickets/*/stato").hasAnyRole("TECNICO", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/tickets/*/rifiuta").hasRole("TECNICO")
                 .requestMatchers(HttpMethod.PUT, "/api/tickets/*").hasAnyRole("STUDENTE", "DOCENTE")
+                // Chat ticket: segnalante o tecnico assegnato (verifica di appartenenza nel service)
+                .requestMatchers(HttpMethod.GET, "/api/tickets/*/chat", "/api/tickets/*/chat/non-letti")
+                    .hasAnyRole("STUDENTE", "DOCENTE", "TECNICO")
+                .requestMatchers(HttpMethod.POST, "/api/tickets/*/chat").hasAnyRole("STUDENTE", "DOCENTE", "TECNICO")
                 // Ticket STUDENTE, DOCENTE o ADMIN
                 .requestMatchers(HttpMethod.POST, "/api/tickets").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/tickets/miei").hasAnyRole("STUDENTE", "DOCENTE", "ADMIN")

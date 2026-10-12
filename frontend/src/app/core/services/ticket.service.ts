@@ -3,6 +3,9 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ChatResponse,
+  MessaggioRequest,
+  MessaggioResponse,
   ModificaTicketRequest,
   StimaUrgenzaResponse,
   TicketRequest,
@@ -68,5 +71,20 @@ export class TicketService {
     // Con tipoRifiuto = ELIMINA il backend risponde 204 No Content: HttpClient
     // restituisce `null` come valore emesso, senza passare per l'error handler.
     return this.http.post<TicketResponse | null>(`${this.apiUrl}/api/tickets/${id}/rifiuta`, request);
+  }
+
+  /** Carica la chat del ticket; il backend marca come letti i messaggi ricevuti. */
+  getChat(ticketId: string): Observable<ChatResponse> {
+    return this.http.get<ChatResponse>(`${this.apiUrl}/api/tickets/${ticketId}/chat`);
+  }
+
+  /** Invia un messaggio nella chat del ticket. */
+  inviaMessaggio(ticketId: string, request: MessaggioRequest): Observable<MessaggioResponse> {
+    return this.http.post<MessaggioResponse>(`${this.apiUrl}/api/tickets/${ticketId}/chat`, request);
+  }
+
+  /** Conta i messaggi non letti della chat senza marcarli come letti (usato dal polling). */
+  getNonLetti(ticketId: string): Observable<{ nonLetti: number }> {
+    return this.http.get<{ nonLetti: number }>(`${this.apiUrl}/api/tickets/${ticketId}/chat/non-letti`);
   }
 }

@@ -111,6 +111,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestisce l'accesso alla chat di un ticket che non ha ancora un tecnico assegnato.
+     */
+    @ExceptionHandler(ChatNonDisponibileException.class)
+    public ResponseEntity<Map<String, Object>> handleChatNonDisponibile(ChatNonDisponibileException ex) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Chat non disponibile", ex.getMessage());
+    }
+
+    /**
      * Gestisce una transizione di stato non consentita dal workflow.
      */
     @ExceptionHandler(InvalidStatoTransitionException.class)

@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { ChatComponent } from '../../../shared/components/chat/chat.component';
 import { TicketService } from '../../../core/services/ticket.service';
 import { Categoria, ModificaTicketRequest, Stato, TicketResponse } from '../../../shared/models/ticket.models';
 import { CATEGORIA_LABEL, STATO_BADGE_CLASS, URGENZA_BADGE_CLASS, URGENZA_BADGE_LABEL, STATO_COLOR, STATO_LABEL } from '../../../shared/utils/ticket-display.util';
@@ -21,7 +22,7 @@ const STATI_MODIFICABILI: Stato[] = [Stato.APERTA, Stato.ASSEGNATA];
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, ChatComponent],
   templateUrl: './ticket-detail.component.html',
 })
 export class TicketDetailComponent implements OnInit {

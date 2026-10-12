@@ -129,8 +129,32 @@
               >
                 Rifiuta
               </button>
+              <button
+                (click)="toggleChat(t)"
+                class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+                [class.border-blue-500]="chatAperta === t.id"
+                [class.text-blue-600]="chatAperta === t.id"
+                [class.border-gray-200]="chatAperta !== t.id"
+                [class.text-gray-600]="chatAperta !== t.id"
+              >
+                💬 Chat
+                @if (nonLettiPerTicket[t.id] > 0) {
+                  <span class="ml-1 rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
+                    {{ nonLettiPerTicket[t.id] }}
+                  </span>
+                }
+              </button>
             </div>
           </div>
+
+          @if (chatAperta === t.id) {
+            <app-chat
+              [ticketId]="t.id"
+              titolo="Chat con il segnalante"
+              suggerimentoVuoto="Inizia la conversazione con il segnalante."
+              (chatLetta)="nonLettiPerTicket[t.id] = 0"
+            ></app-chat>
+          }
         </div>
 
         <div *ngIf="ticketAttivi.length === 0" class="rounded-xl border border-gray-100 bg-white p-12 text-center shadow-sm">

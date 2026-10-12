@@ -1,5 +1,6 @@
 package it.unical.campusreport.service;
 
+import it.unical.campusreport.entity.Messaggio;
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
 import it.unical.campusreport.entity.enums.Categoria;
@@ -273,6 +274,44 @@ public class EmailServiceImpl implements EmailService {
                     tecnico.getEmail(), ticket.getId());
         } catch (Exception e) {
             log.error("Errore nell'invio dell'email di modifica segnalazione per ticket {}", ticket.getId(), e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void notificaNuovoMessaggio(Messaggio messaggio, User destinatario) {
+        try {
+            Ticket ticket = messaggio.getTicket();
+            User mittente = messaggio.getMittente();
+
+            String corpo = """
+                    Gentile %s,
+
+                    Hai ricevuto un nuovo messaggio riguardo alla segnalazione
+                    '%s'.
+
+                    Messaggio di %s:
+                    "%s"
+
+                    Accedi al sistema per rispondere.
+
+                    CampusReport - Sistema segnalazioni Unical"""
+                    .formatted(
+                            destinatario.getNome(),
+                            ticket.getTitolo(),
+                            mittente.getNome(),
+                            messaggio.getTesto());
+
+            invia(destinatario.getEmail(),
+                    "[CampusReport] Nuovo messaggio — " + ticket.getTitolo(),
+                    corpo);
+
+            log.info("Email di nuovo messaggio inviata a {} per ticket {}",
+                    destinatario.getEmail(), ticket.getId());
+        } catch (Exception e) {
+            log.error("Errore nell'invio dell'email di nuovo messaggio a {}", destinatario.getEmail(), e);
         }
     }
 

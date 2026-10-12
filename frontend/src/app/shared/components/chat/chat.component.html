@@ -1,0 +1,90 @@
+<div class="mt-6 rounded-xl border border-gray-100 bg-white shadow-sm">
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+    <div class="flex items-center gap-2">
+      <h3 class="font-semibold text-gray-900">{{ titolo }}</h3>
+      @if (chat && chat.nonLetti > 0) {
+        <span class="rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
+          {{ chat.nonLetti }}
+        </span>
+      }
+    </div>
+    <span class="text-xs text-green-500">● In tempo reale</span>
+  </div>
+
+  <!-- Area messaggi -->
+  <div
+    #chatMessages
+    id="chat-messages"
+    class="mx-6 my-4 flex h-80 flex-col gap-3 overflow-y-auto rounded-lg bg-gray-50 px-6 py-4"
+  >
+    @if (chat && chat.messaggi.length > 0) {
+      @for (messaggio of chat.messaggi; track messaggio.id) {
+        @if (messaggio.mio) {
+          <div class="flex justify-end">
+            <div class="max-w-xs lg:max-w-md">
+              <div class="whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-[#1F4E79] px-4 py-2.5 text-sm text-white">
+                {{ messaggio.testo }}
+              </div>
+              <p class="mt-1 text-right text-xs text-gray-400">
+                {{ messaggio.createdAt | date: 'HH:mm' }}
+                @if (messaggio.letto) { ✓✓ } @else { ✓ }
+              </p>
+            </div>
+          </div>
+        } @else {
+          <div class="flex items-end gap-2">
+            <div class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-600">
+              {{ messaggio.mittente.nome[0] }}
+            </div>
+            <div class="max-w-xs lg:max-w-md">
+              <p class="mb-1 ml-1 text-xs text-gray-500">{{ messaggio.mittente.nome }}</p>
+              <div class="whitespace-pre-wrap break-words rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-4 py-2.5 text-sm">
+                {{ messaggio.testo }}
+              </div>
+              <p class="ml-1 mt-1 text-xs text-gray-400">{{ messaggio.createdAt | date: 'HH:mm' }}</p>
+            </div>
+          </div>
+        }
+      }
+    } @else {
+      <div class="flex h-full flex-col items-center justify-center text-center">
+        <p class="text-sm text-gray-400">Nessun messaggio ancora.</p>
+        <p class="mt-1 text-xs text-gray-300">{{ suggerimentoVuoto }}</p>
+      </div>
+    }
+  </div>
+
+  <!-- Form invio -->
+  <div class="px-6 pb-5">
+    @if (errore) {
+      <p class="mb-2 text-xs text-red-600">{{ errore }}</p>
+    }
+    <div class="flex gap-2">
+      <input
+        type="text"
+        [(ngModel)]="nuovoMessaggio"
+        (keydown.enter)="inviaMessaggio()"
+        maxlength="2000"
+        placeholder="Scrivi un messaggio..."
+        class="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm transition-all focus:border-blue-400 focus:outline-none"
+      />
+      <button
+        type="button"
+        (click)="inviaMessaggio()"
+        [disabled]="!nuovoMessaggio.trim() || loadingMessaggio"
+        class="rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+        style="background: #1F4E79"
+      >
+        @if (loadingMessaggio) {
+          <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"></path>
+          </svg>
+        } @else {
+          Invia
+        }
+      </button>
+    </div>
+  </div>
+</div>

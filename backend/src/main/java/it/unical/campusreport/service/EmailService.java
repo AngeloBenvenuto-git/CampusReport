@@ -1,5 +1,6 @@
 package it.unical.campusreport.service;
 
+import it.unical.campusreport.entity.Messaggio;
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
 import it.unical.campusreport.entity.enums.Categoria;
@@ -75,4 +76,13 @@ public interface EmailService {
                                               Categoria vecchiaCategoria,
                                               String vecchioCubo,
                                               String vecchioPiano);
+
+    /**
+     * Notifica il destinatario che ha ricevuto un nuovo messaggio nella chat
+     * di una segnalazione.
+     *
+     * @param messaggio    il messaggio appena inviato
+     * @param destinatario l'utente che deve ricevere la notifica
+     */
+    void notificaNuovoMessaggio(Messaggio messaggio, User destinatario);
 }

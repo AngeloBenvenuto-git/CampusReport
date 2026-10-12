@@ -96,3 +96,25 @@ export interface ModificaTicketRequest {
   cubo?: string;
   piano?: string;
 }
+
+export interface MessaggioResponse {
+  id: string;
+  ticketId: string;
+  mittente: UserResponse;
+  testo: string;
+  createdAt: string;
+  letto: boolean;
+  /** True se il mittente è l'utente autenticato. */
+  mio: boolean;
+}
+
+export interface ChatResponse {
+  ticketId: string;
+  messaggi: MessaggioResponse[];
+  /** Messaggi non letti prima di questa lettura (il backend li marca come letti). */
+  nonLetti: number;
+}
+
+export interface MessaggioRequest {
+  testo: string;
+}

@@ -58,6 +58,8 @@ export class TicketListComponent implements OnInit {
   caricamento = true;
   errore: string | null = null;
   tickets: TicketResponse[] = [];
+  /** Messaggi chat non letti per ticket (solo ticket con tecnico assegnato). */
+  nonLettiPerTicket: Record<string, number> = {};
 
   statoFiltro = '';
   categoriaFiltro = '';
@@ -82,12 +84,25 @@ export class TicketListComponent implements OnInit {
       next: (tickets) => {
         this.tickets = tickets;
         this.caricamento = false;
+        this.caricaNonLetti();
       },
       error: () => {
         this.caricamento = false;
         this.errore = 'Impossibile caricare le segnalazioni.';
       },
     });
+  }
+
+  /** Recupera il numero di messaggi chat non letti per ogni ticket con tecnico assegnato. */
+  private caricaNonLetti(): void {
+    this.tickets
+      .filter((t) => t.tecnico != null)
+      .forEach((t) => {
+        this.ticketService.getNonLetti(t.id).subscribe({
+          next: (r) => (this.nonLettiPerTicket[t.id] = r.nonLetti),
+          error: () => {},
+        });
+      });
   }
 
   // ─── Statistiche ────────────────────────────────────────────────────────
