@@ -187,6 +187,51 @@ class EmailServiceImplTest {
                 .doesNotThrowAnyException();
     }
 
+    // ─── notificaTecnicoModificaSegnalazione ──────────────────────────────────────
+
+    @Test
+    void notificaTecnicoModificaSegnalazione_modificaUtente_indicaUtenteEValoriPrecedenti() {
+        User segnalante = buildUser("Luca", "luca@studenti.unical.it", Ruolo.STUDENTE);
+        User tecnico = buildUser("Mario", "mario@campusreport.local", Ruolo.TECNICO);
+        Ticket ticket = buildTicket(segnalante);
+        ticket.setTecnico(tecnico);
+
+        service.notificaTecnicoModificaSegnalazione(
+                ticket, "Vecchio titolo", "Vecchia descrizione", Categoria.ELETTRICO, "42C", null, "dall'utente");
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+        SimpleMailMessage message = captor.getValue();
+
+        assertThat(message.getTo()).containsExactly("mario@campusreport.local");
+        assertThat(message.getSubject())
+                .isEqualTo("[CampusReport] Segnalazione modificata - WiFi assente in aula");
+        assertThat(message.getText())
+                .contains("Gentile Mario,")
+                .contains("è stata modificata\ndall'utente.")
+                .contains("Titolo: WiFi assente in aula")
+                .contains("Titolo: Vecchio titolo")
+                .contains("Categoria: ELETTRICO");
+    }
+
+    @Test
+    void notificaTecnicoModificaSegnalazione_modificaAdmin_indicaAmministratore() {
+        User segnalante = buildUser("Luca", "luca@studenti.unical.it", Ruolo.STUDENTE);
+        User tecnico = buildUser("Mario", "mario@campusreport.local", Ruolo.TECNICO);
+        Ticket ticket = buildTicket(segnalante);
+        ticket.setTecnico(tecnico);
+
+        service.notificaTecnicoModificaSegnalazione(
+                ticket, "Vecchio titolo", "Vecchia descrizione", Categoria.WIFI, null, null, "dall'amministratore");
+
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+
+        assertThat(captor.getValue().getText())
+                .contains("è stata modificata\ndall'amministratore.")
+                .doesNotContain("dall'utente");
+    }
+
     // ─── Gestione errori: nessuna eccezione propagata ────────────────────────────
 
     @Test

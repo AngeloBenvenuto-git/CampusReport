@@ -1,0 +1,176 @@
+<div style="display: flex; height: calc(100vh - 64px); overflow: hidden; background: #f0ede8;">
+  <!-- PANNELLO LATERALE -->
+  <aside
+    class="flex w-[380px] flex-shrink-0 flex-col border-r border-gray-100 bg-white"
+    style="height: 100%; overflow-y: auto"
+  >
+    <!-- Loading skeleton -->
+    <div *ngIf="caricamento" class="space-y-4 px-5 py-5">
+      <div class="h-5 w-1/2 animate-pulse rounded bg-gray-200"></div>
+      <div class="grid grid-cols-3 gap-2">
+        <div *ngFor="let _ of [1, 2, 3]" class="h-16 animate-pulse rounded-lg bg-gray-100"></div>
+      </div>
+      <div *ngFor="let _ of [1, 2, 3, 4, 5]" class="h-10 animate-pulse rounded-lg bg-gray-100"></div>
+    </div>
+
+    <!-- Errore -->
+    <div *ngIf="!caricamento && errore" class="m-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {{ errore }}
+    </div>
+
+    <ng-container *ngIf="!caricamento && !errore">
+      <!-- ─── Panoramica (nessuna zona selezionata) ─── -->
+      <ng-container *ngIf="!zonaSelezionata">
+        <div class="border-b border-gray-100 px-5 py-4">
+          <h2 class="font-semibold text-gray-900">Panoramica campus</h2>
+          <p class="mt-0.5 text-xs text-gray-400">Clicca una zona sulla mappa o nell'elenco per il dettaglio.</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 px-5 pt-4">
+          <div class="rounded-lg bg-gray-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-gray-900">{{ totaleAttivi }}</p>
+            <p class="text-xs text-gray-500">Ticket attivi</p>
+          </div>
+          <div class="rounded-lg bg-red-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-red-600">{{ totaleInAttesa }}</p>
+            <p class="text-xs text-red-500">In attesa</p>
+          </div>
+          <div class="rounded-lg bg-gray-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-gray-900">{{ zoneConAttivi }}</p>
+            <p class="text-xs text-gray-500">Zone attive</p>
+          </div>
+        </div>
+
+        <!-- Legenda -->
+        <div class="px-5 pt-4">
+          <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Ticket attivi per zona</p>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <span *ngFor="let l of LIVELLI_INTENSITA" class="flex items-center gap-1.5 text-xs text-gray-600">
+              <span class="h-3 w-3 rounded-full border border-gray-300" [style.background]="l.colore"></span>
+              {{ l.label }}
+            </span>
+            <span class="flex items-center gap-1.5 text-xs text-gray-600">
+              <span class="h-3 w-3 rounded-full border-2 border-red-600 bg-white"></span>
+              In attesa
+            </span>
+          </div>
+        </div>
+
+        <p *ngIf="tickets.length === 0" class="mx-5 mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+          Nessuna segnalazione presente nel sistema.
+        </p>
+
+        <!-- Elenco zone -->
+        <div class="mt-4 border-t border-gray-100">
+          <button
+            *ngFor="let z of zoneOrdinate"
+            type="button"
+            (click)="selezionaZona(z)"
+            class="flex w-full items-center justify-between gap-3 border-b border-gray-100 px-5 py-3 text-left transition hover:bg-gray-50"
+          >
+            <span class="flex min-w-0 items-center gap-2.5">
+              <span class="h-2.5 w-2.5 flex-shrink-0 rounded-full border border-gray-300" [style.background]="coloreIntensita(z.attivi)"></span>
+              <span class="truncate text-sm text-gray-800">{{ z.def.nome }}</span>
+            </span>
+            <span class="flex flex-shrink-0 items-center gap-2">
+              <span *ngIf="z.inAttesa > 0" class="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                {{ z.inAttesa }} in attesa
+              </span>
+              <span class="text-sm font-semibold text-gray-900">{{ z.attivi }}</span>
+            </span>
+          </button>
+        </div>
+      </ng-container>
+
+      <!-- ─── Dettaglio zona selezionata ─── -->
+      <ng-container *ngIf="zonaSelezionata as z">
+        <div class="border-b border-gray-100 px-5 py-4">
+          <button type="button" (click)="deselezionaZona()" class="mb-2 text-xs font-medium text-primary-600 hover:underline">
+            ← Tutte le zone
+          </button>
+          <h2 class="font-semibold text-gray-900">{{ z.def.nome }}</h2>
+          <p *ngIf="descrizioneZonaSelezionata" class="mt-0.5 text-xs text-gray-400">{{ descrizioneZonaSelezionata }}</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 px-5 py-4">
+          <div class="rounded-lg bg-gray-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-gray-900">{{ z.attivi }}</p>
+            <p class="text-xs text-gray-500">Attivi</p>
+          </div>
+          <div class="rounded-lg bg-red-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-red-600">{{ z.inAttesa }}</p>
+            <p class="text-xs text-red-500">In attesa</p>
+          </div>
+          <div class="rounded-lg bg-gray-50 px-3 py-2.5">
+            <p class="text-xl font-bold text-gray-900">{{ z.totale }}</p>
+            <p class="text-xs text-gray-500">Totale</p>
+          </div>
+        </div>
+
+        <p *ngIf="z.tickets.length === 0" class="mx-5 rounded-lg bg-gray-50 px-4 py-6 text-center text-sm text-gray-400">
+          Nessuna segnalazione in questa zona.
+        </p>
+
+        <div class="border-t border-gray-100">
+          <div *ngFor="let t of z.tickets" class="border-b border-gray-100 px-5 py-3">
+            <div class="flex items-start gap-3">
+              <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" [style.background]="STATO_COLOR[t.stato]"></span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="truncate text-sm font-medium text-gray-900">{{ t.titolo }}</p>
+                  <span class="flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="STATO_BADGE_CLASS[t.stato]">
+                    {{ STATO_LABEL[t.stato] }}
+                  </span>
+                </div>
+                <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
+                  <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">{{ CATEGORIA_LABEL[t.categoria] }}</span>
+                  <span *ngIf="t.cubo">Cubo {{ t.cubo }}</span>
+                  <span *ngIf="t.piano">· {{ t.piano }}</span>
+                  <span>· {{ dataRelativa(t.createdAt) }}</span>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">
+                  Tecnico:
+                  <span [class.text-red-500]="!nomeTecnico(t)" [class.font-medium]="!nomeTecnico(t)">
+                    {{ nomeTecnico(t) ?? 'Non assegnato' }}
+                  </span>
+                </p>
+                <div class="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    (click)="apriDettaglio(t)"
+                    class="rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                  >
+                    Dettaglio
+                  </button>
+                  <button
+                    *ngIf="t.stato === 'IN_ATTESA'"
+                    type="button"
+                    (click)="apriAssegna(t)"
+                    class="rounded-lg px-3 py-1 text-xs font-medium text-white transition hover:opacity-90"
+                    style="background: #F59E0B"
+                  >
+                    Assegna
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </aside>
+
+  <!-- MAPPA -->
+  <div style="flex: 1; position: relative; height: 100%;">
+    <div #mappa style="position: absolute; inset: 0;"></div>
+  </div>
+</div>
+
+<!-- Modal assegnazione manuale -->
+<app-assegna-modal
+  *ngIf="ticketDaAssegnare"
+  [ticket]="ticketDaAssegnare"
+  [tecnici]="tecnici"
+  (assegnato)="onTicketAssegnato($event)"
+  (chiuso)="chiudiAssegna()"
+></app-assegna-modal>

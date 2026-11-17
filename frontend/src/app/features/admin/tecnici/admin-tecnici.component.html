@@ -95,6 +95,14 @@
             >
               {{ t.attivo ? 'Disattiva' : 'Attiva' }}
             </button>
+            <button
+              *ngIf="!t.attivo"
+              type="button"
+              (click)="apriModalElimina(t)"
+              class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+            >
+              Elimina
+            </button>
           </div>
         </div>
       </div>
@@ -284,6 +292,51 @@
           style="background: #1F4E79"
         >
           {{ inviandoModifica ? 'Salvataggio...' : 'Salva modifiche' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal eliminazione tecnico -->
+  <div
+    *ngIf="tecnicoDaEliminare"
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+    style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
+    (click)="chiudiModalElimina()"
+  >
+    <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <div class="border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Elimina tecnico</h2>
+      </div>
+
+      <div class="space-y-4 px-6 py-5">
+        <p class="text-sm text-gray-600">
+          Stai per eliminare definitivamente
+          <span class="font-semibold text-gray-900">{{ tecnicoDaEliminare.nome }} {{ tecnicoDaEliminare.cognome }}</span>.
+          Le segnalazioni già concluse resteranno nel sistema senza tecnico associato. Questa azione è irreversibile.
+        </p>
+
+        <div *ngIf="erroreElimina" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ erroreElimina }}
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+        <button
+          type="button"
+          (click)="chiudiModalElimina()"
+          [disabled]="eliminando"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+        >
+          Annulla
+        </button>
+        <button
+          type="button"
+          (click)="confermaElimina()"
+          [disabled]="eliminando"
+          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {{ eliminando ? 'Eliminazione...' : 'Elimina definitivamente' }}
         </button>
       </div>
     </div>

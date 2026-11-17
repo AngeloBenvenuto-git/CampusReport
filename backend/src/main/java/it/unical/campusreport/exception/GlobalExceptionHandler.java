@@ -151,6 +151,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Gestisce il tentativo di eliminare un tecnico ancora attivo o con segnalazioni in corso.
+     */
+    @ExceptionHandler(TecnicoNonEliminabileException.class)
+    public ResponseEntity<Map<String, Object>> handleTecnicoNonEliminabile(TecnicoNonEliminabileException ex) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Tecnico non eliminabile", ex.getMessage());
+    }
+
+    /**
      * Gestisce pesi alpha/beta non validi per l'algoritmo di assegnazione.
      */
     @ExceptionHandler(ConfigPesiInvalidiException.class)

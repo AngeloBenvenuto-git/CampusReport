@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -62,6 +62,7 @@ export class TicketDetailComponent implements OnInit {
     private ticketService: TicketService,
     private authService: AuthService,
     private fb: FormBuilder,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -104,8 +105,35 @@ export class TicketDetailComponent implements OnInit {
     return zonaDef?.cubi ?? [];
   }
 
+  /** True se l'utente corrente è l'admin: non partecipa alla chat del ticket. */
+  get isAdmin(): boolean {
+    return this.authService.getRuolo() === 'ADMIN';
+  }
+
+  /** Breadcrumb verso l'elenco di provenienza in base al ruolo. */
+  get breadcrumb(): { label: string; link: string } {
+    switch (this.authService.getRuolo()) {
+      case 'ADMIN':
+        return { label: 'Tutti i ticket', link: '/admin/tickets' };
+      case 'TECNICO':
+        return { label: 'Dashboard', link: '/dashboard' };
+      default:
+        return { label: 'Le mie segnalazioni', link: '/tickets' };
+    }
+  }
+
+  /**
+   * Torna alla pagina di provenienza. Se la pagina è stata aperta direttamente
+   * (prima navigazione dell'app, navigationId === 1) usa la home del ruolo:
+   * ADMIN → /admin/tickets, TECNICO → /dashboard, altri → /tickets.
+   */
   torna(): void {
-    this.router.navigate(['/tickets']);
+    const navigationId = (this.location.getState() as { navigationId?: number } | null)?.navigationId ?? 1;
+    if (navigationId > 1) {
+      this.location.back();
+      return;
+    }
+    this.router.navigate([this.breadcrumb.link]);
   }
 
   apriModifica(): void {

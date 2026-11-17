@@ -63,6 +63,9 @@
       </button>
     </div>
 
+    <div *ngIf="messaggioSuccesso" class="mb-4 rounded-lg bg-green-50 px-4 py-2.5 text-sm text-green-700">
+      {{ messaggioSuccesso }}
+    </div>
     <p *ngIf="errore" class="mb-4 text-sm text-red-600">{{ errore }}</p>
 
     <!-- Loading skeleton -->
@@ -116,6 +119,20 @@
             >
               Assegna
             </button>
+            <button
+              type="button"
+              (click)="apriModifica(t)"
+              class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            >
+              Modifica
+            </button>
+            <button
+              type="button"
+              (click)="apriElimina(t)"
+              class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50"
+            >
+              Elimina
+            </button>
           </div>
         </div>
       </div>
@@ -123,56 +140,177 @@
   </div>
 
   <!-- Modal assegnazione manuale -->
+  <app-assegna-modal
+    *ngIf="ticketDaAssegnare"
+    [ticket]="ticketDaAssegnare"
+    [tecnici]="tecnici"
+    (assegnato)="onTicketAssegnato($event)"
+    (chiuso)="chiudiAssegna()"
+  ></app-assegna-modal>
+
+  <!-- Modal modifica segnalazione -->
   <div
-    *ngIf="modalAssegnaAperto"
-    style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;"
-    (click)="chiudiAssegna()"
+    *ngIf="ticketInModifica"
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+    style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
+    (click)="chiudiModifica()"
+  >
+    <div class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <h2 class="font-semibold text-gray-900">Modifica segnalazione</h2>
+        <button type="button" class="text-gray-400 transition hover:text-gray-600" (click)="chiudiModifica()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <form [formGroup]="formModifica" (ngSubmit)="salvaModifica()">
+        <div class="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            ℹ️ Come amministratore puoi modificare la segnalazione in qualsiasi stato. Se è assegnata a un tecnico,
+            riceverà un'email con le modifiche.
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Titolo *</label>
+            <input type="text" formControlName="titolo" maxlength="200" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none" />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Descrizione *</label>
+            <textarea formControlName="descrizione" rows="3" maxlength="2000" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none resize-none"></textarea>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Categoria *</label>
+            <select formControlName="categoria" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+              <option *ngFor="let c of categorie" [ngValue]="c">{{ CATEGORIA_LABEL[c] }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Zona *</label>
+            <select formControlName="zonaId" (change)="onZonaModificaChange()" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+              <option *ngFor="let z of zone" [value]="z.id">{{ z.nome }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Cubo</label>
+            <select formControlName="cubo" *ngIf="cubiDisponibili.length > 0" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="">-- Seleziona cubo --</option>
+              <option *ngFor="let c of cubiDisponibili" [value]="c">{{ c }}</option>
+            </select>
+            <input
+              type="text"
+              formControlName="cubo"
+              *ngIf="cubiDisponibili.length === 0"
+              placeholder="es. 15B, 22C..."
+              class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Piano</label>
+            <select formControlName="piano" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none">
+              <option value="">Seleziona piano (opzionale)</option>
+              <option *ngFor="let p of piani" [value]="p">{{ p }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wide text-gray-500">Urgenza</label>
+            <div class="mt-2 flex gap-2">
+              <button
+                *ngFor="let i of livelliUrgenza"
+                type="button"
+                (click)="setUrgenzaModifica(i)"
+                [title]="URGENZA_DESCRIZIONE[i]"
+                class="h-8 w-8 rounded-full border-2 text-sm font-medium transition-all"
+                [class.bg-red-500]="urgenzaModifica !== null && i <= urgenzaModifica && urgenzaModifica >= 4"
+                [class.bg-orange-400]="urgenzaModifica !== null && i <= urgenzaModifica && urgenzaModifica === 3"
+                [class.bg-yellow-400]="urgenzaModifica !== null && i <= urgenzaModifica && urgenzaModifica <= 2"
+                [class.text-white]="urgenzaModifica !== null && i <= urgenzaModifica"
+                [class.border-transparent]="urgenzaModifica !== null && i <= urgenzaModifica"
+                [class.border-gray-200]="urgenzaModifica === null || i > urgenzaModifica"
+                [class.text-gray-400]="urgenzaModifica === null || i > urgenzaModifica"
+              >
+                {{ i }}
+              </button>
+            </div>
+            <p class="mt-1.5 text-sm text-gray-700">
+              {{ urgenzaModifica !== null ? URGENZA_DESCRIZIONE[urgenzaModifica] : 'Urgenza non impostata' }}
+            </p>
+          </div>
+
+          <p *ngIf="erroreModifica" class="text-sm text-red-600">{{ erroreModifica }}</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+          <button
+            type="button"
+            (click)="chiudiModifica()"
+            class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+          >
+            Annulla
+          </button>
+          <button
+            type="submit"
+            [disabled]="formModifica.invalid || salvandoModifica"
+            class="rounded-lg px-4 py-2 text-sm text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            style="background: #1F4E79"
+          >
+            {{ salvandoModifica ? 'Salvataggio...' : 'Salva modifiche' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal eliminazione segnalazione -->
+  <div
+    *ngIf="ticketDaEliminare"
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+    style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);"
+    (click)="chiudiElimina()"
   >
     <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
       <div class="border-b border-gray-100 px-6 py-4">
-        <h2 class="font-semibold text-gray-900">Assegna segnalazione</h2>
-        <p class="mt-0.5 text-sm text-gray-500">{{ ticketDaAssegnare?.titolo }}</p>
-        <span class="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-          {{ ticketDaAssegnare ? CATEGORIA_LABEL[ticketDaAssegnare.categoria] : '' }}
-        </span>
+        <h2 class="font-semibold text-gray-900">Elimina segnalazione</h2>
       </div>
 
-      <div class="space-y-3 px-6 py-5">
-        <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tecnico *</label>
-        <select
-          [(ngModel)]="tecnicoSelezionatoId"
-          class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
-        >
-          <option value="">Seleziona un tecnico</option>
-          <option *ngFor="let t of (ticketDaAssegnare ? tecniciDisponibiliPerAssegnazione(ticketDaAssegnare) : [])" [value]="t.id">
-            {{ t.nome }} {{ t.cognome }} ({{ t.caricoAttuale }}/{{ t.caricoMassimo }})
-          </option>
-        </select>
-        <p
-          *ngIf="ticketDaAssegnare && tecniciDisponibiliPerAssegnazione(ticketDaAssegnare).length === 0"
-          class="text-xs text-gray-400"
-        >
-          Nessun tecnico attivo con questa specializzazione.
+      <div class="space-y-4 px-6 py-5">
+        <p class="text-sm text-gray-600">
+          Stai per eliminare definitivamente
+          <span class="font-semibold text-gray-900">'{{ ticketDaEliminare.titolo }}'</span>, con la sua chat e il suo
+          storico. L'utente che l'ha inviata verrà avvisato via email. Questa azione è irreversibile.
         </p>
-        <p *ngIf="erroreAssegna" class="text-sm text-red-600">{{ erroreAssegna }}</p>
+
+        <div *ngIf="erroreElimina" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {{ erroreElimina }}
+        </div>
       </div>
 
       <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
         <button
           type="button"
-          (click)="chiudiAssegna()"
-          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+          (click)="chiudiElimina()"
+          [disabled]="eliminando"
+          class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
         >
           Annulla
         </button>
         <button
           type="button"
-          (click)="confermaAssegna()"
-          [disabled]="!tecnicoSelezionatoId || assegnando"
-          class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          style="background: #1F4E79"
+          (click)="confermaElimina()"
+          [disabled]="eliminando"
+          class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {{ assegnando ? 'Assegnazione...' : 'Assegna' }}
+          {{ eliminando ? 'Eliminazione...' : 'Elimina definitivamente' }}
         </button>
       </div>
     </div>

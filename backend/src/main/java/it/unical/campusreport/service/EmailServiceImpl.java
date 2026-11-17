@@ -218,7 +218,8 @@ public class EmailServiceImpl implements EmailService {
                                                      String vecchiaDescrizione,
                                                      Categoria vecchiaCategoria,
                                                      String vecchioCubo,
-                                                     String vecchioPiano) {
+                                                     String vecchioPiano,
+                                                     String modificatoDa) {
         try {
             User tecnico = ticket.getTecnico();
             if (tecnico == null) {
@@ -229,7 +230,7 @@ public class EmailServiceImpl implements EmailService {
                     Gentile %s,
 
                     La segnalazione a te assegnata è stata modificata
-                    dall'utente.
+                    %s.
 
                     ═══════════════════════════════
                     DETTAGLI AGGIORNATI:
@@ -255,6 +256,7 @@ public class EmailServiceImpl implements EmailService {
                     CampusReport - Sistema segnalazioni Unical"""
                     .formatted(
                             tecnico.getNome(),
+                            modificatoDa,
                             ticket.getTitolo(),
                             ticket.getDescrizione(),
                             ticket.getCategoria(),
@@ -316,6 +318,33 @@ public class EmailServiceImpl implements EmailService {
     }
 
     // ─── Helper privati ─────────────────────────────────────────────────────────
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void notificaTicketEliminatoDaAdmin(User destinatario, String titolo) {
+        try {
+            String corpo = """
+                    Gentile %s,
+
+                    la segnalazione '%s' è stata rimossa
+                    dall'amministratore del sistema.
+
+                    Per informazioni puoi contattare l'ufficio tecnico
+                    dell'ateneo.
+
+                    CampusReport - Sistema segnalazioni Unical"""
+                    .formatted(destinatario.getNome(), titolo);
+
+            invia(destinatario.getEmail(), "[CampusReport] La tua segnalazione è stata rimossa", corpo);
+
+            log.info("Email di eliminazione segnalazione '{}' inviata a {}", titolo, destinatario.getEmail());
+        } catch (Exception e) {
+            log.error("Errore nell'invio dell'email di eliminazione segnalazione '{}' a {}",
+                    titolo, destinatario.getEmail(), e);
+        }
+    }
 
     private String valoreOVuoto(String valore) {
         return valore != null && !valore.isBlank() ? valore : "-";

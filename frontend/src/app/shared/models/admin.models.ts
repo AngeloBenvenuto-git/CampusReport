@@ -60,6 +60,16 @@ export interface ModificaTecnicoRequest {
   caricoMassimo: number;
 }
 
+export interface AdminModificaTicketRequest {
+  titolo: string;
+  descrizione: string;
+  categoria: Categoria;
+  zonaId: string;
+  cubo: string | null;
+  piano: string | null;
+  urgenza: number | null;
+}
+
 export interface AdminTicketFiltri {
   stato?: string;
   categoria?: string;

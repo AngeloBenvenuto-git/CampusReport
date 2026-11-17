@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * Servizio per la gestione degli account tecnico da parte dell'amministratore:
- * creazione con invito via email, modifica, attivazione/disattivazione.
+ * creazione con invito via email, modifica, attivazione/disattivazione, eliminazione.
  */
 public interface AdminTecnicoService {
 
@@ -51,4 +51,16 @@ public interface AdminTecnicoService {
      * @throws it.unical.campusreport.exception.TecnicoNotFoundException se il tecnico non esiste
      */
     TecnicoAdminResponse cambiaStato(UUID id, CambioStatoTecnicoRequest request);
+
+    /**
+     * Elimina definitivamente un tecnico disattivato e senza segnalazioni in corso.
+     * I ticket storici e i cambi di stato restano nel sistema con tecnico/utente null;
+     * i messaggi di chat inviati dal tecnico e i suoi token di attivazione vengono eliminati.
+     *
+     * @param id identificativo del tecnico
+     * @throws it.unical.campusreport.exception.TecnicoNotFoundException       se il tecnico non esiste
+     * @throws it.unical.campusreport.exception.TecnicoNonEliminabileException se il tecnico è attivo
+     *                                                                         o ha segnalazioni in corso
+     */
+    void eliminaTecnico(UUID id);
 }

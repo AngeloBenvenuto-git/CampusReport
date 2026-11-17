@@ -59,9 +59,9 @@ public interface EmailService {
     void notificaRifiutoDefinitivo(Ticket ticket, String motivazione);
 
     /**
-     * Notifica il tecnico assegnato che il segnalante ha modificato i dettagli
-     * della segnalazione a lui assegnata, riportando i valori precedenti e
-     * quelli aggiornati.
+     * Notifica il tecnico assegnato che il segnalante o l'amministratore ha
+     * modificato i dettagli della segnalazione a lui assegnata, riportando i
+     * valori precedenti e quelli aggiornati.
      *
      * @param ticket             il ticket modificato, già aggiornato con i nuovi valori
      * @param vecchioTitolo      il titolo prima della modifica
@@ -69,13 +69,16 @@ public interface EmailService {
      * @param vecchiaCategoria   la categoria prima della modifica
      * @param vecchioCubo        il cubo prima della modifica
      * @param vecchioPiano       il piano prima della modifica
+     * @param modificatoDa       chi ha effettuato la modifica, già preposizionato
+     *                           (es. "dall'utente", "dall'amministratore")
      */
     void notificaTecnicoModificaSegnalazione(Ticket ticket,
                                               String vecchioTitolo,
                                               String vecchiaDescrizione,
                                               Categoria vecchiaCategoria,
                                               String vecchioCubo,
-                                              String vecchioPiano);
+                                              String vecchioPiano,
+                                              String modificatoDa);
 
     /**
      * Notifica il destinatario che ha ricevuto un nuovo messaggio nella chat
@@ -85,4 +88,13 @@ public interface EmailService {
      * @param destinatario l'utente che deve ricevere la notifica
      */
     void notificaNuovoMessaggio(Messaggio messaggio, User destinatario);
+
+    /**
+     * Notifica un utente (segnalante o tecnico assegnato) che una segnalazione
+     * è stata rimossa definitivamente dall'amministratore.
+     *
+     * @param destinatario l'utente da avvisare
+     * @param titolo       il titolo della segnalazione eliminata
+     */
+    void notificaTicketEliminatoDaAdmin(User destinatario, String titolo);
 }

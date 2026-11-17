@@ -57,6 +57,12 @@ export class AdminTecniciComponent implements OnInit {
     caricoMassimo: [10, [Validators.required, Validators.min(1)]],
   });
 
+  // ─── Modal eliminazione tecnico ─────────────────────────────────────────
+
+  tecnicoDaEliminare: TecnicoAdminResponse | null = null;
+  eliminando = false;
+  erroreElimina: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private adminService: AdminService,
@@ -250,6 +256,49 @@ export class AdminTecniciComponent implements OnInit {
           this.erroreModifica = 'Impossibile salvare le modifiche.';
         },
       });
+  }
+
+  // ─── Modal eliminazione tecnico ─────────────────────────────────────────
+
+  /**
+   * Apre il modal di conferma per l'eliminazione definitiva di un tecnico disattivato.
+   */
+  apriModalElimina(tecnico: TecnicoAdminResponse): void {
+    this.tecnicoDaEliminare = tecnico;
+    this.erroreElimina = null;
+  }
+
+  /**
+   * Chiude il modal di conferma eliminazione (ignorato mentre la richiesta è in corso).
+   */
+  chiudiModalElimina(): void {
+    if (this.eliminando) return;
+    this.tecnicoDaEliminare = null;
+  }
+
+  /**
+   * Elimina il tecnico selezionato. In caso di 409 mostra nel modal il messaggio del backend
+   * (tecnico ancora attivo o con segnalazioni in corso).
+   */
+  confermaElimina(): void {
+    if (!this.tecnicoDaEliminare) return;
+    const id = this.tecnicoDaEliminare.id;
+    this.eliminando = true;
+    this.erroreElimina = null;
+
+    this.adminService.eliminaTecnico(id).subscribe({
+      next: () => {
+        this.eliminando = false;
+        this.tecnicoDaEliminare = null;
+        this.caricaTecnici();
+        this.mostraSuccesso('Tecnico eliminato');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.eliminando = false;
+        this.erroreElimina =
+          err.status === 409 && err.error?.message ? err.error.message : 'Impossibile eliminare il tecnico.';
+      },
+    });
   }
 
   private mostraSuccesso(messaggio: string): void {

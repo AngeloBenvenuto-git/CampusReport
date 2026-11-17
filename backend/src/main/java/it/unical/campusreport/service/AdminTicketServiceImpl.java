@@ -1,19 +1,25 @@
 package it.unical.campusreport.service;
 
 import it.unical.campusreport.dto.*;
+import it.unical.campusreport.entity.Allegato;
 import it.unical.campusreport.entity.CambioStato;
 import it.unical.campusreport.entity.Tecnico;
 import it.unical.campusreport.entity.Ticket;
 import it.unical.campusreport.entity.User;
 import it.unical.campusreport.entity.Zona;
+import it.unical.campusreport.entity.enums.Categoria;
 import it.unical.campusreport.entity.enums.Priorita;
 import it.unical.campusreport.entity.enums.Stato;
 import it.unical.campusreport.exception.TecnicoNonAttivoException;
 import it.unical.campusreport.exception.TecnicoNotFoundException;
 import it.unical.campusreport.exception.TicketNotFoundException;
+import it.unical.campusreport.exception.ZonaNotFoundException;
+import it.unical.campusreport.repository.AllegatoRepository;
 import it.unical.campusreport.repository.CambioStatoRepository;
+import it.unical.campusreport.repository.MessaggioRepository;
 import it.unical.campusreport.repository.TecnicoRepository;
 import it.unical.campusreport.repository.TicketRepository;
+import it.unical.campusreport.repository.ZonaRepository;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +43,8 @@ import org.springframework.util.StringUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,15 +67,24 @@ public class AdminTicketServiceImpl implements AdminTicketService {
     private final TicketRepository ticketRepository;
     private final TecnicoRepository tecnicoRepository;
     private final CambioStatoRepository cambioStatoRepository;
+    private final ZonaRepository zonaRepository;
+    private final MessaggioRepository messaggioRepository;
+    private final AllegatoRepository allegatoRepository;
     private final EmailService emailService;
 
     public AdminTicketServiceImpl(TicketRepository ticketRepository,
                                   TecnicoRepository tecnicoRepository,
                                   CambioStatoRepository cambioStatoRepository,
+                                  ZonaRepository zonaRepository,
+                                  MessaggioRepository messaggioRepository,
+                                  AllegatoRepository allegatoRepository,
                                   EmailService emailService) {
         this.ticketRepository = ticketRepository;
         this.tecnicoRepository = tecnicoRepository;
         this.cambioStatoRepository = cambioStatoRepository;
+        this.zonaRepository = zonaRepository;
+        this.messaggioRepository = messaggioRepository;
+        this.allegatoRepository = allegatoRepository;
         this.emailService = emailService;
     }
 
@@ -127,6 +144,98 @@ public class AdminTicketServiceImpl implements AdminTicketService {
 
         List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
         return toTicketResponse(ticket, storico);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public TicketResponse modificaTicket(UUID id, AdminModificaTicketRequest request, User admin) {
+        log.info("Admin {} modifica il ticket {}", admin.getEmail(), id);
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException("Ticket non trovato con id: " + id));
+
+        Zona zona = zonaRepository.findById(request.getZonaId())
+                .orElseThrow(() -> new ZonaNotFoundException("Zona non trovata con id: " + request.getZonaId()));
+
+        String vecchioTitolo = ticket.getTitolo();
+        String vecchiaDescrizione = ticket.getDescrizione();
+        Categoria vecchiaCategoria = ticket.getCategoria();
+        String vecchioCubo = ticket.getCubo();
+        String vecchioPiano = ticket.getPiano();
+
+        ticket.setTitolo(request.getTitolo());
+        ticket.setDescrizione(request.getDescrizione());
+        ticket.setCategoria(request.getCategoria());
+        ticket.setZona(zona);
+        ticket.setCubo(request.getCubo());
+        ticket.setPiano(request.getPiano());
+
+        if (request.getUrgenza() != null) {
+            ticket.setUrgenza(request.getUrgenza());
+            ticket.setPriorita(request.getUrgenza() >= 4 ? Priorita.ALTA : Priorita.NORMALE);
+        }
+        // Il tecnico assegnato NON viene ricalcolato anche se cambia la categoria.
+
+        ticket = ticketRepository.save(ticket);
+
+        cambioStatoRepository.save(CambioStato.builder()
+                .ticket(ticket)
+                .statoPrecedente(ticket.getStato())
+                .statoNuovo(ticket.getStato())
+                .utente(admin)
+                .nota("Segnalazione modificata dall'amministratore")
+                .build());
+
+        if (ticket.getTecnico() != null) {
+            emailService.notificaTecnicoModificaSegnalazione(
+                    ticket, vecchioTitolo, vecchiaDescrizione, vecchiaCategoria, vecchioCubo, vecchioPiano,
+                    "dall'amministratore");
+        }
+
+        log.info("Ticket {} modificato dall'admin {}", id, admin.getEmail());
+
+        List<CambioStato> storico = cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket);
+        return toTicketResponse(ticket, storico);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>L'eliminazione segue l'ordine imposto dalle FK: messaggi, storico
+     * cambi di stato, allegati (prima i file su filesystem, poi le righe) e
+     * infine il ticket. Le email vengono inviate dopo l'eliminazione; eventuali
+     * errori di invio sono gestiti dall'{@link EmailService} senza bloccare l'operazione.
+     */
+    @Override
+    @Transactional
+    public void eliminaTicket(UUID id) {
+        log.info("Admin: eliminazione ticket {}", id);
+
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new TicketNotFoundException("Ticket non trovato con id: " + id));
+
+        String titolo = ticket.getTitolo();
+        User segnalante = ticket.getSegnalante();
+        User tecnico = ticket.getTecnico();
+
+        messaggioRepository.deleteByTicket(ticket);
+        cambioStatoRepository.deleteAll(cambioStatoRepository.findByTicketOrderByTimestampAsc(ticket));
+
+        List<Allegato> allegati = allegatoRepository.findByTicket(ticket);
+        eliminaAllegatiDaFilesystem(ticket, allegati);
+        allegatoRepository.deleteAll(allegati);
+
+        ticketRepository.delete(ticket);
+
+        emailService.notificaTicketEliminatoDaAdmin(segnalante, titolo);
+        if (tecnico != null) {
+            emailService.notificaTicketEliminatoDaAdmin(tecnico, titolo);
+        }
+
+        log.info("Ticket {} ('{}') eliminato definitivamente dall'admin", id, titolo);
     }
 
     /**
@@ -197,6 +306,17 @@ public class AdminTicketServiceImpl implements AdminTicketService {
     }
 
     // ─── Helper privati ─────────────────────────────────────────────────────────
+
+    private void eliminaAllegatiDaFilesystem(Ticket ticket, List<Allegato> allegati) {
+        for (Allegato allegato : allegati) {
+            try {
+                Files.deleteIfExists(Paths.get(allegato.getPath()));
+            } catch (IOException e) {
+                log.warn("Impossibile eliminare l'allegato {} dal filesystem per il ticket {}",
+                        allegato.getFilename(), ticket.getId(), e);
+            }
+        }
+    }
 
     /**
      * Costruisce la Specification con i filtri opzionali e impone l'ordinamento

@@ -381,7 +381,8 @@ public class TicketServiceImpl implements TicketService {
 
         if (ticket.getTecnico() != null && ticket.getStato() == Stato.ASSEGNATA) {
             emailService.notificaTecnicoModificaSegnalazione(
-                    ticket, vecchioTitolo, vecchiaDescrizione, vecchiaCategoria, vecchioCubo, vecchioPiano);
+                    ticket, vecchioTitolo, vecchiaDescrizione, vecchiaCategoria, vecchioCubo, vecchioPiano,
+                    "dall'utente");
         }
 
         log.info("Ticket {} modificato da {}", id, utente.getEmail());

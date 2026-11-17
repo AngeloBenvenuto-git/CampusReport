@@ -287,7 +287,7 @@ class TicketServiceImplTest {
         assertThat(ticket.getCubo()).isEqualTo("12A");
         assertThat(ticket.getPiano()).isEqualTo("1° Piano");
         verify(emailService, never())
-                .notificaTecnicoModificaSegnalazione(any(), any(), any(), any(), any(), any());
+                .notificaTecnicoModificaSegnalazione(any(), any(), any(), any(), any(), any(), any());
         verify(nlpClient, never()).classifyText(any());
 
         ArgumentCaptor<CambioStato> captor = ArgumentCaptor.forClass(CambioStato.class);
@@ -326,7 +326,7 @@ class TicketServiceImplTest {
         assertThat(ticket.getTecnico()).isEqualTo(tecnico);
         verify(assegnazioneService, never()).assegna(any());
         verify(emailService).notificaTecnicoModificaSegnalazione(
-                ticket, "WiFi assente", "Il WiFi non funziona", Categoria.WIFI, null, null);
+                ticket, "WiFi assente", "Il WiFi non funziona", Categoria.WIFI, null, null, "dall'utente");
     }
 
     @Test

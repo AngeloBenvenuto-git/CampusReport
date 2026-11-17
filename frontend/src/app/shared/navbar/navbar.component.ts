@@ -33,6 +33,21 @@ export class NavbarComponent {
     return this.authService.getRuolo() === 'ADMIN';
   }
 
+  /**
+   * Destinazione del logo in base al ruolo: ADMIN → /admin, TECNICO → /dashboard,
+   * STUDENTE/DOCENTE (e utente non autenticato) → /map.
+   */
+  get homeLink(): string {
+    switch (this.authService.getRuolo()) {
+      case 'ADMIN':
+        return '/admin';
+      case 'TECNICO':
+        return '/dashboard';
+      default:
+        return '/map';
+    }
+  }
+
   get iniziali(): string {
     const utente = this.utente;
     if (!utente) {

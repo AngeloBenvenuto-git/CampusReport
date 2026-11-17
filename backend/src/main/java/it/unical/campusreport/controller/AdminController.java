@@ -81,6 +81,34 @@ public class AdminController {
     }
 
     /**
+     * Modifica un ticket in qualsiasi stato, senza riassegnare il tecnico.
+     *
+     * @param id      identificativo del ticket
+     * @param request nuovi valori del ticket
+     * @return ticket aggiornato
+     */
+    @PutMapping("/tickets/{id}")
+    public ResponseEntity<TicketResponse> modificaTicket(@PathVariable UUID id,
+                                                         @Valid @RequestBody AdminModificaTicketRequest request) {
+        User admin = getCurrentUser();
+        log.info("Admin {} modifica il ticket {}", admin.getEmail(), id);
+        return ResponseEntity.ok(adminTicketService.modificaTicket(id, request, admin));
+    }
+
+    /**
+     * Elimina definitivamente un ticket con chat, storico e allegati.
+     *
+     * @param id identificativo del ticket
+     * @return 204 No Content
+     */
+    @DeleteMapping("/tickets/{id}")
+    public ResponseEntity<Void> eliminaTicket(@PathVariable UUID id) {
+        log.info("Admin: eliminazione ticket {}", id);
+        adminTicketService.eliminaTicket(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Esporta tutti i ticket del sistema in formato Excel (.xlsx).
      *
      * @return file Excel allegato
@@ -160,6 +188,19 @@ public class AdminController {
                                                                    @Valid @RequestBody CambioStatoTecnicoRequest request) {
         log.info("Admin: cambio stato tecnico {} → attivo={}", id, request.isAttivo());
         return ResponseEntity.ok(adminTecnicoService.cambiaStato(id, request));
+    }
+
+    /**
+     * Elimina definitivamente un tecnico disattivato e senza segnalazioni in corso.
+     *
+     * @param id identificativo del tecnico
+     * @return 204 No Content
+     */
+    @DeleteMapping("/tecnici/{id}")
+    public ResponseEntity<Void> eliminaTecnico(@PathVariable UUID id) {
+        log.info("Admin: eliminazione tecnico {}", id);
+        adminTecnicoService.eliminaTecnico(id);
+        return ResponseEntity.noContent().build();
     }
 
     // ─── Configurazione algoritmo di assegnazione ──────────────────────────────

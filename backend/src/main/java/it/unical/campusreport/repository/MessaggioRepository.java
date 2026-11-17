@@ -15,4 +15,8 @@ public interface MessaggioRepository extends JpaRepository<Messaggio, UUID> {
     long countByTicketAndLettoFalseAndMittenteNot(Ticket ticket, User mittente);
 
     List<Messaggio> findByTicketAndLettoFalseAndMittenteNot(Ticket ticket, User mittente);
+
+    void deleteByMittente(User mittente);
+
+    void deleteByTicket(Ticket ticket);
 }

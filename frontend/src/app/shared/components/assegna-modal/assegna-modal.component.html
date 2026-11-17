@@ -1,0 +1,50 @@
+<div
+  style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 1rem;"
+  (click)="chiudi()"
+>
+  <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" (click)="$event.stopPropagation()">
+    <div class="border-b border-gray-100 px-6 py-4">
+      <h2 class="font-semibold text-gray-900">Assegna segnalazione</h2>
+      <p class="mt-0.5 text-sm text-gray-500">{{ ticket.titolo }}</p>
+      <span class="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+        {{ CATEGORIA_LABEL[ticket.categoria] }}
+      </span>
+    </div>
+
+    <div class="space-y-3 px-6 py-5">
+      <label class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500">Tecnico *</label>
+      <select
+        [(ngModel)]="tecnicoSelezionatoId"
+        class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none"
+      >
+        <option value="">Seleziona un tecnico</option>
+        <option *ngFor="let t of tecniciDisponibili" [value]="t.id">
+          {{ t.nome }} {{ t.cognome }} ({{ t.caricoAttuale }}/{{ t.caricoMassimo }})
+        </option>
+      </select>
+      <p *ngIf="tecniciDisponibili.length === 0" class="text-xs text-gray-400">
+        Nessun tecnico attivo con questa specializzazione.
+      </p>
+      <p *ngIf="erroreAssegna" class="text-sm text-red-600">{{ erroreAssegna }}</p>
+    </div>
+
+    <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
+      <button
+        type="button"
+        (click)="chiudi()"
+        class="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100"
+      >
+        Annulla
+      </button>
+      <button
+        type="button"
+        (click)="conferma()"
+        [disabled]="!tecnicoSelezionatoId || assegnando"
+        class="rounded-lg px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        style="background: #1F4E79"
+      >
+        {{ assegnando ? 'Assegnazione...' : 'Assegna' }}
+      </button>
+    </div>
+  </div>
+</div>

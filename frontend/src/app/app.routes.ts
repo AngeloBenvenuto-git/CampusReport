@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { AdminConfigComponent } from './features/admin/config/admin-config.component';
 import { AdminDashboardComponent } from './features/admin/dashboard/admin-dashboard.component';
+import { AdminMappaComponent } from './features/admin/mappa/admin-mappa.component';
 import { AdminTecniciComponent } from './features/admin/tecnici/admin-tecnici.component';
 import { AdminTicketsComponent } from './features/admin/tickets/admin-tickets.component';
 import { AttivaAccountComponent } from './features/auth/attiva/attiva-account.component';
@@ -37,6 +38,7 @@ export const routes: Routes = [
     data: { ruoli: ['ADMIN'] },
     children: [
       { path: '', component: AdminDashboardComponent },
+      { path: 'mappa', component: AdminMappaComponent },
       { path: 'tecnici', component: AdminTecniciComponent },
       { path: 'tickets', component: AdminTicketsComponent },
       { path: 'config', component: AdminConfigComponent },

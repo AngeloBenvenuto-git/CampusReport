@@ -1,6 +1,7 @@
 package it.unical.campusreport.repository;
 
 import it.unical.campusreport.entity.PasswordResetToken;
+import it.unical.campusreport.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -11,4 +12,6 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     Optional<PasswordResetToken> findByToken(String token);
 
     Optional<PasswordResetToken> findByTokenAndUsatoFalse(String token);
+
+    void deleteByUser(User user);
 }

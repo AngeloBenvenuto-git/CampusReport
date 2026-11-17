@@ -1,5 +1,6 @@
 package it.unical.campusreport.service;
 
+import it.unical.campusreport.dto.AdminModificaTicketRequest;
 import it.unical.campusreport.dto.AdminTicketFilter;
 import it.unical.campusreport.dto.AssegnazioneManualRequest;
 import it.unical.campusreport.dto.TicketResponse;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 /**
  * Servizio per la gestione dei ticket dal pannello amministratore:
- * ricerca filtrata, assegnazione manuale ed esportazione CSV.
+ * ricerca filtrata, assegnazione manuale, modifica, eliminazione ed esportazione CSV.
  */
 public interface AdminTicketService {
 
@@ -43,4 +44,29 @@ public interface AdminTicketService {
      * @return contenuto del file Excel
      */
     byte[] exportExcel();
+
+    /**
+     * Modifica un ticket in qualsiasi stato. Il tecnico assegnato non viene
+     * ricalcolato anche se cambia la categoria. Se l'urgenza è valorizzata,
+     * la priorità viene ricalcolata (urgenza &gt;= 4 → ALTA, altrimenti NORMALE).
+     * Registra un cambio di stato di tracciamento e, se il ticket ha un tecnico,
+     * gli invia un'email con i valori precedenti.
+     *
+     * @param id      identificativo del ticket
+     * @param request nuovi valori del ticket
+     * @param admin   amministratore che effettua la modifica
+     * @return ticket aggiornato
+     * @throws it.unical.campusreport.exception.TicketNotFoundException se il ticket non esiste
+     * @throws it.unical.campusreport.exception.ZonaNotFoundException   se la zona non esiste
+     */
+    TicketResponse modificaTicket(UUID id, AdminModificaTicketRequest request, User admin);
+
+    /**
+     * Elimina definitivamente un ticket con chat, storico e allegati (file compresi)
+     * e avvisa via email il segnalante e l'eventuale tecnico assegnato.
+     *
+     * @param id identificativo del ticket
+     * @throws it.unical.campusreport.exception.TicketNotFoundException se il ticket non esiste
+     */
+    void eliminaTicket(UUID id);
 }

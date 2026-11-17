@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AdminModificaTicketRequest,
   AdminStatisticheResponse,
   AdminTicketFiltri,
   ConfigPesiRequest,
@@ -44,6 +45,20 @@ export class AdminService {
     return this.http.patch<TicketResponse>(`${this.apiUrl}/tickets/${ticketId}/assegna`, { tecnicoId });
   }
 
+  /**
+   * Modifica un ticket in qualsiasi stato (PUT /api/admin/tickets/:id). Il tecnico assegnato non cambia.
+   */
+  modificaTicket(id: string, request: AdminModificaTicketRequest): Observable<TicketResponse> {
+    return this.http.put<TicketResponse>(`${this.apiUrl}/tickets/${id}`, request);
+  }
+
+  /**
+   * Elimina definitivamente un ticket con chat, storico e allegati (DELETE /api/admin/tickets/:id).
+   */
+  eliminaTicket(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tickets/${id}`);
+  }
+
   exportCsv(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export/csv`, { responseType: 'blob' });
   }
@@ -64,6 +79,14 @@ export class AdminService {
 
   cambioStatoTecnico(id: string, attivo: boolean): Observable<TecnicoAdminResponse> {
     return this.http.patch<TecnicoAdminResponse>(`${this.apiUrl}/tecnici/${id}/stato`, { attivo });
+  }
+
+  /**
+   * Elimina definitivamente un tecnico disattivato e senza segnalazioni in corso
+   * (DELETE /api/admin/tecnici/:id). Risponde 409 se il tecnico non è eliminabile.
+   */
+  eliminaTecnico(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/tecnici/${id}`);
   }
 
   // ─── Configurazione algoritmo ───────────────────────────────────────────
